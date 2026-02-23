@@ -18,7 +18,8 @@ async function loadCustomAnimes() {
       headers: { 'X-Master-Key': JSONBIN_KEY }
     });
     const d = await r.json();
-    return d.record?.animes || [];
+    const record = d.record ?? d;
+    return record.animes || [];
   } catch(e) { return []; }
 }
 
