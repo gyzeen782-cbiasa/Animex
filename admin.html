@@ -270,14 +270,18 @@ async function jbGet() {
   const apiKey = getApiKey();
   if (!binId || !apiKey) throw new Error('Bin ID dan API Key belum diisi! Buka tab ⚙️ Setup.');
   const r = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-    headers: { 'X-Master-Key': apiKey, 'X-Bin-Meta': 'false' }
+    headers: { 'X-Master-Key': apiKey }
   });
   if (!r.ok) {
     const txt = await r.text();
     throw new Error(`JSONBin error ${r.status}: ${txt.slice(0, 100)}`);
   }
   const d = await r.json();
-  return d.record || { animes: [] };
+  // JSONBin v3 wraps data dalam .record
+  // Kalau .record ada → pakai .record, kalau tidak → data langsung (fallback)
+  const record = d.record ?? d;
+  if (!record.animes) record.animes = [];
+  return record;
 }
 
 async function jbSet(data) {
