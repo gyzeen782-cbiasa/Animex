@@ -251,9 +251,17 @@
 // ── CONFIG ──────────────────────────────────
 const DEFAULT_PASSWORD = 'kitsune2024';
 const RAILWAY_API = 'https://kitsuneid-api-production.up.railway.app';
+const DEFAULT_BIN_ID = '699c6ab843b1c97be996c684';
+const DEFAULT_API_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
 
 function getCfg() {
-  return JSON.parse(localStorage.getItem('kitsuneAdminCfg') || '{}');
+  const saved = JSON.parse(localStorage.getItem('kitsuneAdminCfg') || '{}');
+  return {
+    apiKey: saved.apiKey || DEFAULT_API_KEY,
+    binId: saved.binId || DEFAULT_BIN_ID,
+    password: saved.password || DEFAULT_PASSWORD,
+    ...saved
+  };
 }
 function saveCfg(cfg) {
   localStorage.setItem('kitsuneAdminCfg', JSON.stringify(cfg));
