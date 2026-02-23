@@ -1,5 +1,8 @@
 // ===== home.js — KitsuneID =====
 const API = 'https://kitsuneid-api-production.up.railway.app';
+const JSONBIN_ID = '699c6ab843b1c97be996c684';
+const JSONBIN_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+
 let heroList = [], heroIdx = 0, heroTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,33 +11,67 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
 });
 
+// ── Ambil anime custom dari JSONBin ──────────
+async function loadCustomAnimes() {
+  try {
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
+      headers: { 'X-Master-Key': JSONBIN_KEY }
+    });
+    const d = await r.json();
+    return d.record?.animes || [];
+  } catch(e) { return []; }
+}
+
+// ── Ongoing ──────────────────────────────────
 async function loadOngoing() {
   try {
-    const r = await fetch(`${API}/ongoing`);
+    const [r, customs] = await Promise.all([
+      fetch(`${API}/ongoing`),
+      loadCustomAnimes()
+    ]);
     const d = await r.json();
-    if (!d.animes?.length) {
-      document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
+
+    // Gabungkan: custom anime ongoing + scrape ongoing
+    const customOngoing = customs.filter(a => a.status === 'Ongoing');
+    const allAnimes = [...customOngoing, ...(d.animes || [])];
+
+    if (!allAnimes.length) {
+      document.getElementById('ongoingGrid').innerHTML =
+        '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
       return;
     }
-    heroList = d.animes.slice(0, 6);
+
+    heroList = allAnimes.slice(0, 6);
     renderHero(0); renderDots();
-    heroTimer = setInterval(() => renderHero((heroIdx+1) % heroList.length), 5000);
-    document.getElementById('ongoingGrid').innerHTML = d.animes.slice(0, 12).map(a => makeCard(a, true)).join('');
-    loadSchedule(d.animes);
+    heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
+    document.getElementById('ongoingGrid').innerHTML =
+      allAnimes.slice(0, 12).map(a => makeCard(a, true)).join('');
+    loadSchedule(d.animes || []);
   } catch(e) {
-    document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
+    document.getElementById('ongoingGrid').innerHTML =
+      '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
   }
 }
 
+// ── Complete ─────────────────────────────────
 async function loadComplete() {
   try {
-    const r = await fetch(`${API}/complete`);
+    const [r, customs] = await Promise.all([
+      fetch(`${API}/complete`),
+      loadCustomAnimes()
+    ]);
     const d = await r.json();
-    if (!d.animes?.length) return;
-    document.getElementById('completeGrid').innerHTML = d.animes.slice(0, 12).map(a => makeCard(a)).join('');
+
+    const customComplete = customs.filter(a => a.status === 'Complete');
+    const allAnimes = [...customComplete, ...(d.animes || [])];
+
+    if (!allAnimes.length) return;
+    document.getElementById('completeGrid').innerHTML =
+      allAnimes.slice(0, 12).map(a => makeCard(a)).join('');
   } catch(e) {}
 }
 
+// ── Hero ─────────────────────────────────────
 function renderHero(idx) {
   if (!heroList[idx]) return;
   heroIdx = idx;
@@ -60,14 +97,14 @@ function renderHero(idx) {
 
 function renderDots() {
   document.getElementById('heroDots').innerHTML = heroList.map((_, i) =>
-    `<div class="hero-dot${i===0?' active':''}" onclick="selectHero(${i})"></div>`
+    `<div class="hero-dot${i === 0 ? ' active' : ''}" onclick="selectHero(${i})"></div>`
   ).join('');
 }
 
 window.selectHero = function(i) {
   clearInterval(heroTimer);
   renderHero(i);
-  heroTimer = setInterval(() => renderHero((heroIdx+1) % heroList.length), 5000);
+  heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
 };
 
 function loadSchedule(animes) {
@@ -82,6 +119,7 @@ function loadSchedule(animes) {
   el.innerHTML = todayList.slice(0, 6).map(a => makeOC(a)).join('');
 }
 
+// ── Search ───────────────────────────────────
 function initSearch() {
   const inputs = ['searchInput','mSearchInput'].map(id => document.getElementById(id)).filter(Boolean);
   let timer;
@@ -92,7 +130,7 @@ function initSearch() {
       if (q.length < 2) { closeSearch(); return; }
       timer = setTimeout(() => doSearch(q), 400);
     });
-    inp.addEventListener('keydown', e => { if(e.key==='Escape') closeSearch(); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.nav-search') && !e.target.closest('.m-search')) closeSearch();
@@ -104,15 +142,32 @@ async function doSearch(q) {
   ov.classList.add('show');
   ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Mencari...</p>';
   try {
-    const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+    // Cari di Railway + custom bersamaan
+    const [r, customs] = await Promise.all([
+      fetch(`${API}/search?q=${encodeURIComponent(q)}`),
+      loadCustomAnimes()
+    ]);
     const d = await r.json();
-    if (!d.results?.length) { ov.innerHTML='<p style="color:var(--muted);font-size:13px">Tidak ditemukan.</p>'; return; }
-    ov.innerHTML = d.results.slice(0, 8).map(a => `
-      <a href="anime.html?slug=${encodeURIComponent(a.slug||'')}" class="sr-item" onclick="closeSearch()">
-        <img src="${a.thumb}" class="sr-thumb" onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
-        <div><div class="sr-title">${a.title}</div><div class="sr-meta">${a.status||''}</div></div>
+    const ql = q.toLowerCase();
+    const customResults = customs.filter(a => a.title?.toLowerCase().includes(ql));
+    const allResults = [...customResults, ...(d.results || [])];
+
+    if (!allResults.length) {
+      ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Tidak ditemukan.</p>';
+      return;
+    }
+    ov.innerHTML = allResults.slice(0, 8).map(a => `
+      <a href="anime.html?slug=${encodeURIComponent(a.slug || '')}" class="sr-item" onclick="closeSearch()">
+        <img src="${a.thumb}" class="sr-thumb"
+          onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
+        <div>
+          <div class="sr-title">${a.title}</div>
+          <div class="sr-meta">${a.status || ''}</div>
+        </div>
       </a>`).join('');
-  } catch(e) { ov.innerHTML='<p style="color:var(--muted);font-size:13px">Gagal mencari.</p>'; }
+  } catch(e) {
+    ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Gagal mencari.</p>';
+  }
 }
 
 function closeSearch() { document.getElementById('searchOv')?.classList.remove('show'); }
