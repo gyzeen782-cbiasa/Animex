@@ -2,37 +2,11 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Akun — Gynimex</title>
+  <title>Akun — KitsuneID</title>
   <link rel="stylesheet" href="css/style.css"/>
-  <style>
-    .profile-box { margin:20px 36px; background:var(--card); border:1px solid var(--border); border-radius:var(--rl); padding:24px; }
-    .profile-avatar { width:72px; height:72px; border-radius:50%; background:var(--accent-s); border:2px solid var(--accent); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:28px; font-weight:800; color:var(--accent); margin:0 auto 14px; }
-    .profile-name { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; text-align:center; margin-bottom:4px; }
-    .profile-email { font-size:13px; color:var(--text2); text-align:center; margin-bottom:16px; }
-    .profile-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px; }
-    .stat-box { background:var(--card2); border-radius:10px; padding:12px; text-align:center; }
-    .stat-num { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--accent); }
-    .stat-lbl { font-size:10px; color:var(--muted); margin-top:2px; }
-    .menu-item { display:flex; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:opacity .2s; }
-    .menu-item:hover { opacity:.7; }
-    .menu-item:last-child { border-bottom:none; }
-    .menu-icon { width:36px; height:36px; background:var(--accent-s); border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--accent); }
-    .menu-label { font-size:14px; font-weight:500; flex:1; }
-    .menu-arrow { color:var(--muted); }
-    .login-box { margin:20px 36px; background:var(--card); border:1px solid var(--border); border-radius:var(--rl); padding:32px 24px; text-align:center; }
-    .login-box h2 { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:8px; }
-    .login-box p { font-size:13px; color:var(--text2); margin-bottom:24px; }
-    .input-group { margin-bottom:14px; text-align:left; }
-    .input-group label { font-size:12px; color:var(--text2); margin-bottom:5px; display:block; }
-    .input-group input { width:100%; padding:11px 14px; background:var(--card2); border:1px solid var(--border); border-radius:9px; color:var(--text); font-size:14px; font-family:'DM Sans',sans-serif; outline:none; }
-    .input-group input:focus { border-color:var(--accent); }
-    @media(max-width:768px) { .profile-box, .login-box { margin:16px; } }
-  </style>
 </head>
 <body>
-<nav class="navbar">
-  <a href="index.html" class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Gyni<span>mex</span></a>
-</nav>
+<nav class="navbar"><a href="index.html" class="logo"></a></nav>
 <div class="page mobile-page">
   <div id="pageContent"></div>
   <div style="height:24px"></div>
@@ -48,22 +22,22 @@
 <div class="toasts" id="toasts"></div>
 <script src="js/main.js"></script>
 <script>
-function renderPage() {
-  const user = getLocal('user');
-  const el = document.getElementById('pageContent');
-  if (user) {
-    const history = getLocal('recentWatch') || [];
-    const saved = getLocal('savedAnimes') || [];
-    const watchHist = getLocal('watchHistory') || {};
-    const totalEps = Object.values(watchHist).reduce((acc,arr)=>acc+arr.length, 0);
-    el.innerHTML = `
+function renderPage(){
+  const user=getLocal('user');
+  const el=document.getElementById('pageContent');
+  if(user){
+    const hist=getLocal('recentWatch')||[];
+    const saved=getLocal('savedAnimes')||[];
+    const wh=getLocal('watchHistory')||{};
+    const totalEps=Object.values(wh).reduce((a,b)=>a+b.length,0);
+    el.innerHTML=`
       <div class="page-hd anim"><h1>Akun Saya</h1></div>
       <div class="profile-box anim anim-d1">
-        <div class="profile-avatar">${user.name?user.name[0].toUpperCase():'G'}</div>
+        <div class="profile-avatar">${user.name?user.name[0].toUpperCase():'K'}</div>
         <div class="profile-name">${user.name||'Pengguna'}</div>
         <div class="profile-email">${user.email||''}</div>
         <div class="profile-stats">
-          <div class="stat-box"><div class="stat-num">${history.length}</div><div class="stat-lbl">Ditonton</div></div>
+          <div class="stat-box"><div class="stat-num">${hist.length}</div><div class="stat-lbl">Ditonton</div></div>
           <div class="stat-box"><div class="stat-num">${saved.length}</div><div class="stat-lbl">Disimpan</div></div>
           <div class="stat-box"><div class="stat-num">${totalEps}</div><div class="stat-lbl">Episode</div></div>
         </div>
@@ -71,49 +45,44 @@ function renderPage() {
           <div class="menu-item" onclick="location.href='history.html'">
             <div class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
             <span class="menu-label">Riwayat Nonton</span>
-            <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </div>
           <div class="menu-item" onclick="location.href='saved.html'">
             <div class="menu-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></div>
             <span class="menu-label">Anime Tersimpan</span>
-            <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
           </div>
           <div class="menu-item" onclick="logout()" style="color:var(--pink)">
-            <div class="menu-icon" style="background:rgba(252,92,125,0.1);color:var(--pink)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></div>
+            <div class="menu-icon" style="background:rgba(252,92,125,.1);color:var(--pink)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></div>
             <span class="menu-label" style="color:var(--pink)">Keluar</span>
           </div>
         </div>
       </div>`;
   } else {
-    el.innerHTML = `
+    el.innerHTML=`
       <div class="page-hd anim"><h1>Masuk</h1><p>Login untuk menyimpan riwayat & koleksi</p></div>
       <div class="login-box anim anim-d1">
         <div class="input-group"><label>Nama</label><input type="text" id="nameIn" placeholder="Nama kamu"></div>
         <div class="input-group"><label>Email</label><input type="email" id="emailIn" placeholder="email@contoh.com"></div>
         <div class="input-group"><label>Password</label><input type="password" id="passIn" placeholder="Password"></div>
         <button class="btn-p" onclick="doLogin()" style="width:100%;justify-content:center;margin-top:6px">Masuk / Daftar</button>
-        <p style="font-size:11px;color:var(--muted);margin-top:14px">Data disimpan di perangkat kamu saja (lokal)</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:12px">Data disimpan lokal di perangkat kamu</p>
       </div>`;
   }
 }
-
-function doLogin() {
-  const name = document.getElementById('nameIn').value.trim();
-  const email = document.getElementById('emailIn').value.trim();
-  const pass = document.getElementById('passIn').value;
-  if (!name || !email || !pass) { showToast('Semua field wajib diisi', 'info'); return; }
-  saveLocal('user', { name, email });
-  showToast('Berhasil masuk!', 'success');
-  setTimeout(() => renderPage(), 500);
+function doLogin(){
+  const name=document.getElementById('nameIn').value.trim();
+  const email=document.getElementById('emailIn').value.trim();
+  const pass=document.getElementById('passIn').value;
+  if(!name||!email||!pass){showToast('Semua field wajib diisi','info');return;}
+  saveLocal('user',{name,email}); showToast('Berhasil masuk!','success');
+  setTimeout(()=>renderPage(),500);
 }
-
-function logout() {
-  if (!confirm('Yakin keluar?')) return;
-  saveLocal('user', null);
-  renderPage();
+function logout(){
+  if(!confirm('Yakin keluar?')) return;
+  saveLocal('user',null); renderPage();
 }
-
-document.addEventListener('DOMContentLoaded', renderPage);
+document.addEventListener('DOMContentLoaded',renderPage);
 </script>
 </body>
 </html>
