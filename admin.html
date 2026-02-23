@@ -185,12 +185,23 @@
     <!-- TAB SETUP -->
     <div id="tab-setup" style="display:none">
       <div class="setup-box" style="border-color:var(--accent)">
-        <div class="setup-title" style="color:var(--accent)">🔗 Koneksi JSONBin</div>
+        <div class="setup-title" style="color:var(--accent)">🔗 Setup JSONBin</div>
         <div class="setup-sub">
-          Credentials sudah diisi otomatis. Klik <strong>Test Koneksi</strong> untuk memastikan JSONBin bisa diakses dari browser kamu.
+          Isi Bin ID dan API Key dari akun JSONBin kamu, lalu klik <strong>Simpan & Test</strong>.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label>Bin ID</label>
+            <input id="cfg-binid" placeholder="699c6ab843b1c97be996c684" type="text">
+          </div>
+          <div>
+            <label>API Key (X-Master-Key)</label>
+            <input id="cfg-apikey" placeholder="$2a$10$..." type="password">
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">Di JSONBin: klik foto profil → API Keys → copy key-nya</div>
+          </div>
+          <button class="btn btn-primary" style="justify-content:center" onclick="saveAndTest()">💾 Simpan & Test Koneksi</button>
         </div>
         <div id="connStatus" class="conn-status"></div>
-        <button class="btn-test" onclick="testConnection()">🔌 Test Koneksi JSONBin</button>
       </div>
 
       <div class="setup-box">
@@ -219,8 +230,9 @@
 <script>
 const ADMIN_PW_DEFAULT = 'kitsune2024';
 const RAILWAY_API = 'https://kitsuneid-api-production.up.railway.app';
-const BIN_ID = '699c6ab843b1c97be996c684';
-const API_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+// Credentials diambil dari localStorage — diisi lewat tab Setup
+function getBinId()  { return localStorage.getItem('jb_bin_id')  || ''; }
+function getApiKey() { return localStorage.getItem('jb_api_key') || ''; }
 
 // ── Auth ─────────────────────────────────────
 function getAdminPw() {
@@ -254,8 +266,11 @@ function switchTab(name) {
 
 // ── JSONBin API ───────────────────────────────
 async function jbGet() {
-  const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-    headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' }
+  const binId = getBinId();
+  const apiKey = getApiKey();
+  if (!binId || !apiKey) throw new Error('Bin ID dan API Key belum diisi! Buka tab ⚙️ Setup.');
+  const r = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+    headers: { 'X-Master-Key': apiKey, 'X-Bin-Meta': 'false' }
   });
   if (!r.ok) {
     const txt = await r.text();
@@ -266,12 +281,12 @@ async function jbGet() {
 }
 
 async function jbSet(data) {
-  const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+  const binId = getBinId();
+  const apiKey = getApiKey();
+  if (!binId || !apiKey) throw new Error('Bin ID dan API Key belum diisi! Buka tab ⚙️ Setup.');
+  const r = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key': API_KEY
-    },
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': apiKey },
     body: JSON.stringify(data)
   });
   if (!r.ok) {
@@ -441,6 +456,16 @@ async function deleteAnime(id) {
 }
 
 // ── Setup ─────────────────────────────────────
+function saveAndTest() {
+  const binId = document.getElementById('cfg-binid').value.trim();
+  const apiKey = document.getElementById('cfg-apikey').value.trim();
+  if (!binId || !apiKey) { showAlert('❌ Isi Bin ID dan API Key dulu!', 'error'); return; }
+  localStorage.setItem('jb_bin_id', binId);
+  localStorage.setItem('jb_api_key', apiKey);
+  localStorage.removeItem('kitsune_conn_ok');
+  testConnection();
+}
+
 function savePassword() {
   const pw = document.getElementById('cfg-password').value.trim();
   if (!pw || pw.length < 4) { showAlert('❌ Password minimal 4 karakter!', 'error'); return; }
@@ -475,7 +500,12 @@ if (sessionStorage.getItem('kitsune_auth') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
   addEpRow();
-  if (!localStorage.getItem('kitsune_conn_ok')) {
+  // Isi form setup dengan nilai tersimpan
+  const savedBin = localStorage.getItem('jb_bin_id');
+  const savedKey = localStorage.getItem('jb_api_key');
+  if (savedBin) document.getElementById('cfg-binid').value = savedBin;
+  if (savedKey) document.getElementById('cfg-apikey').value = savedKey;
+  if (!savedBin || !savedKey || !localStorage.getItem('kitsune_conn_ok')) {
     document.getElementById('connWarning').style.display = 'block';
   }
 }
