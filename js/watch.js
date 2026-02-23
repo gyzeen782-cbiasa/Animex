@@ -1,5 +1,5 @@
 // ===== watch.js — KitsuneID (fixed) =====
-const API = 'kitsuneid-api-production.up.railway.app';
+const API = 'https://kitsuneid-api-production.up.railway.app';
 let animeData = null, episodeList = [], currentSlug = '', currentEp = '1';
 
 document.addEventListener('DOMContentLoaded', async () => {
