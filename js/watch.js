@@ -1,190 +1,174 @@
-// ===== WATCH.JS — Streaming page logic =====
+// ===== watch.js — KitsuneID =====
+const API = '/api';
+let animeData = null, episodeList = [], currentSlug = '', currentEp = 1;
 
-const slug = getParam('slug');
-let currentEp = parseInt(getParam('ep')) || 1;
-let animeData = null;
-let allEpisodes = [];
-let currentServers = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-  if (!slug) { window.location.href = 'index.html'; return; }
-  loadWatchPage();
+document.addEventListener('DOMContentLoaded', async () => {
+  const animeSlug = getParam('slug');
+  const ep = parseInt(getParam('ep')) || 1;
+  if (!animeSlug) { location.href='index.html'; return; }
+  currentSlug = animeSlug; currentEp = ep;
+  await loadAnime(animeSlug);
+  await loadEpisode(animeSlug, ep);
 });
 
-async function loadWatchPage() {
+async function loadAnime(slug) {
   try {
-    // Load detail anime + episode list
-    const res = await fetch(`/api/anime?slug=${encodeURIComponent(slug)}`);
-    animeData = await res.json();
+    const r = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`);
+    animeData = await r.json();
+    episodeList = animeData.episodes || [];
 
-    if (!animeData || !animeData.title) throw new Error('Data tidak ditemukan');
+    // Thumbnail & title
+    const thumb = document.getElementById('watchThumb');
+    const title = document.getElementById('watchTitle');
+    if (thumb) { thumb.src = animeData.thumb||''; thumb.onerror = () => thumb.src='https://placehold.co/44x60/12121f/7c5cfc?text=?'; }
+    if (title) title.textContent = animeData.title || '';
 
-    document.title = `${animeData.title} Ep ${currentEp} — AnimeKu`;
-    allEpisodes = animeData.episodes || [];
+    // Synopsis
+    const syn = document.getElementById('watchSynopsis');
+    if (syn) syn.textContent = animeData.synopsis || 'Tidak ada sinopsis.';
 
-    // Update sidebar info
-    document.getElementById('sidebarTitle').textContent = animeData.title;
-    document.getElementById('sidebarThumb').src = animeData.thumb;
-    document.getElementById('sidebarAnimeLink').href = `anime.html?slug=${encodeURIComponent(slug)}`;
-    document.getElementById('sidebarEpLabel').textContent = `${allEpisodes.length} Episode`;
-    document.getElementById('playerTitle').textContent = animeData.title;
-
-    renderSidebarEps();
-    loadEpisode(currentEp);
-
-    // Ep search
-    document.getElementById('epSearch').addEventListener('input', (e) => {
-      const num = parseInt(e.target.value);
-      if (num && num > 0 && num <= allEpisodes.length) {
-        scrollToEp(num);
-      }
-    });
-
-  } catch (err) {
-    console.error(err);
-    document.getElementById('playerWrapper').innerHTML =
-      '<div class="player-placeholder"><p style="color:var(--text-muted)">Gagal memuat. Coba refresh.</p></div>';
+    // Episode pills
+    renderEpPills();
+  } catch(e) {
+    console.error('Gagal load anime:', e);
   }
 }
 
-async function loadEpisode(epNum) {
-  currentEp = epNum;
-  document.getElementById('playerEpInfo').textContent = `Episode ${epNum}`;
+function renderEpPills() {
+  const container = document.getElementById('epPills');
+  if (!container || !episodeList.length) return;
+  const history = getLocal('watchHistory') || {};
+  const watched = history[currentSlug] || [];
+  container.innerHTML = episodeList.map(ep => {
+    const num = ep.episode || ep.title?.match(/\d+/)?.[0] || '?';
+    const isActive = String(num) === String(currentEp);
+    const isWatched = watched.includes(String(num));
+    return `<div class="ep-pill ${isActive?'active-ep':''} ${isWatched&&!isActive?'watched-ep':''}"
+      onclick="goToEp('${ep.slug}', '${num}')">${num}</div>`;
+  }).join('');
+  // Scroll to active pill
+  setTimeout(() => {
+    const active = container.querySelector('.active-ep');
+    if (active) active.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+  }, 200);
+}
 
-  // Update active ep di sidebar
-  document.querySelectorAll('.sidebar-ep-item').forEach(item => {
-    item.classList.toggle('active-ep', parseInt(item.dataset.ep) === epNum);
-  });
+async function loadEpisode(animeSlug, epNum) {
+  // Update ep meta
+  const epMeta = document.getElementById('epMeta');
+  if (epMeta) epMeta.textContent = `Episode ${epNum}`;
 
   // Update nav buttons
-  const prevBtn = document.getElementById('prevEpBtn');
-  const nextBtn = document.getElementById('nextEpBtn');
+  updateNavBtns(epNum);
 
-  if (epNum <= 1) {
-    prevBtn.style.opacity = '0.4';
-    prevBtn.style.pointerEvents = 'none';
-  } else {
-    prevBtn.style.opacity = '1';
-    prevBtn.style.pointerEvents = 'auto';
-    prevBtn.onclick = (e) => { e.preventDefault(); loadEpisode(epNum - 1); };
-  }
+  // Load iframe
+  const playerDiv = document.getElementById('playerArea');
+  if (playerDiv) playerDiv.innerHTML = `<div class="video-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/></svg><p>Memuat player...</p></div>`;
 
-  if (epNum >= allEpisodes.length) {
-    nextBtn.style.opacity = '0.4';
-    nextBtn.style.pointerEvents = 'none';
-  } else {
-    nextBtn.style.opacity = '1';
-    nextBtn.style.pointerEvents = 'auto';
-    nextBtn.onclick = (e) => { e.preventDefault(); loadEpisode(epNum + 1); };
-  }
+  // Cari slug episode dari list
+  const ep = episodeList.find(e => String(e.episode) === String(epNum) || e.title?.includes(String(epNum)));
+  if (!ep) { if(playerDiv) playerDiv.innerHTML=`<div class="video-placeholder"><p>Episode tidak ditemukan</p></div>`; return; }
 
-  // Update URL tanpa reload
-  const newUrl = `watch.html?slug=${encodeURIComponent(slug)}&ep=${epNum}`;
-  history.replaceState(null, '', newUrl);
-
-  // Tambahkan ke history
-  saveWatchHistory(epNum);
-
-  // Load streaming links
   try {
-    const ep = allEpisodes.find(e => parseInt(e.episode) === epNum) || allEpisodes[epNum - 1];
-    if (!ep) throw new Error('Episode tidak ditemukan');
+    const r = await fetch(`${API}/episode?slug=${encodeURIComponent(ep.slug)}`);
+    const data = await r.json();
 
-    const res = await fetch(`/api/episode?slug=${encodeURIComponent(ep.slug || slug)}&ep=${epNum}`);
-    const data = await res.json();
+    // Save to history
+    saveWatchHistory(animeSlug, epNum);
 
-    currentServers = data.servers || [];
-    renderServers(currentServers);
+    const servers = data.servers || [];
+    renderServers(servers, ep.slug);
 
-    if (currentServers.length > 0) {
-      loadServer(currentServers[0]);
-    } else {
-      document.getElementById('playerWrapper').innerHTML =
-        '<div class="player-placeholder"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="opacity:0.3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><p>Link streaming tidak tersedia untuk episode ini.</p></div>';
+    if (servers.length && servers[0].url) {
+      loadPlayer(servers[0].url);
+    } else if (playerDiv) {
+      playerDiv.innerHTML = `<div class="video-placeholder"><p>Sumber video tidak tersedia</p></div>`;
     }
-
-  } catch (err) {
-    console.error('Episode error:', err);
+  } catch(e) {
+    if (playerDiv) playerDiv.innerHTML = `<div class="video-placeholder"><p>Gagal memuat episode</p></div>`;
   }
 }
 
-function renderServers(servers) {
-  const container = document.getElementById('serverSelect');
-  if (!servers || servers.length === 0) {
-    container.innerHTML = '';
-    return;
+function loadPlayer(url) {
+  const playerDiv = document.getElementById('playerArea');
+  if (!playerDiv) return;
+  playerDiv.innerHTML = `<iframe src="${url}" allowfullscreen allow="autoplay; fullscreen; encrypted-media" scrolling="no"></iframe>`;
+}
+
+function renderServers(servers, epSlug) {
+  const container = document.getElementById('serverList');
+  if (!container) return;
+  if (!servers.length) { container.innerHTML='<span style="color:var(--muted);font-size:12px">Tidak ada server</span>'; return; }
+  container.innerHTML = servers.map((s, i) =>
+    `<button class="server-btn${i===0?' active':''}" onclick="selectServer(${i}, '${epSlug}', this)">${s.name||'Server '+(i+1)}</button>`
+  ).join('');
+  window._watchServers = servers;
+}
+
+window.selectServer = async function(idx, epSlug, btn) {
+  document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const servers = window._watchServers || [];
+  const server = servers[idx];
+  if (!server) return;
+  if (server.url) { loadPlayer(server.url); return; }
+  if (server.needsNonce && server.serverId) {
+    btn.textContent = 'Memuat...';
+    try {
+      const r = await fetch(`${API}/server?id=${encodeURIComponent(server.serverId)}&ref=${encodeURIComponent(server.referer||'')}`);
+      const d = await r.json();
+      if (d.url) loadPlayer(d.url);
+      else throw new Error('no url');
+    } catch(e) { btn.textContent = server.name || 'Error'; showToast('Gagal load server', 'error'); }
+    btn.textContent = server.name || 'Server';
   }
+};
 
-  container.innerHTML = servers.map((s, i) => `
-    <button class="server-btn ${i === 0 ? 'active' : ''}"
-            onclick="selectServer(${i})" data-idx="${i}">
-      ${s.name || `Server ${i + 1}`}
-    </button>
-  `).join('');
-}
-
-function selectServer(idx) {
-  document.querySelectorAll('.server-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-  loadServer(currentServers[idx]);
-}
-
-function loadServer(server) {
-  if (!server || !server.url) return;
-
-  document.getElementById('playerWrapper').innerHTML = `
-    <iframe src="${server.url}"
-            allowfullscreen
-            allow="autoplay; fullscreen"
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups">
-    </iframe>
-  `;
-}
-
-function renderSidebarEps() {
-  const list = document.getElementById('sidebarEpList');
-  list.innerHTML = allEpisodes.map((ep, i) => {
-    const epNum = parseInt(ep.episode) || (i + 1);
-    const history = getFromLocal('watchHistory') || {};
-    const watched = (history[slug] || []).includes(String(epNum));
-
-    return `
-      <div class="sidebar-ep-item ${epNum === currentEp ? 'active-ep' : ''}"
-           data-ep="${epNum}"
-           onclick="loadEpisode(${epNum})">
-        <span class="sidebar-ep-num">${epNum}</span>
-        <span class="sidebar-ep-title">${ep.title || `Episode ${epNum}`}</span>
-        <div class="sidebar-ep-watched ${watched ? 'done' : ''}"></div>
-      </div>
-    `;
-  }).join('');
-
-  // Scroll ke episode aktif
-  setTimeout(() => scrollToEp(currentEp), 100);
-}
-
-function scrollToEp(epNum) {
-  const item = document.querySelector(`.sidebar-ep-item[data-ep="${epNum}"]`);
-  if (item) {
-    item.scrollIntoView({ block: 'center', behavior: 'smooth' });
+function updateNavBtns(epNum) {
+  const idx = episodeList.findIndex(e => String(e.episode) === String(epNum));
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  if (prevBtn) {
+    const hasPrev = idx > 0;
+    prevBtn.classList.toggle('disabled', !hasPrev);
+    if (hasPrev) {
+      const prev = episodeList[idx-1];
+      prevBtn.onclick = () => goToEp(prev.slug, prev.episode);
+      prevBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Ep ${prev.episode||'Sebelumnya'}`;
+    } else {
+      prevBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Sebelumnya`;
+    }
+  }
+  if (nextBtn) {
+    const hasNext = idx < episodeList.length - 1;
+    nextBtn.classList.toggle('disabled', !hasNext);
+    if (hasNext) {
+      const next = episodeList[idx+1];
+      nextBtn.onclick = () => goToEp(next.slug, next.episode);
+      nextBtn.innerHTML = `Ep ${next.episode||'Selanjutnya'} <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+    } else {
+      nextBtn.innerHTML = `Selanjutnya <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>`;
+    }
   }
 }
 
-function saveWatchHistory(epNum) {
-  let history = getFromLocal('watchHistory') || {};
-  if (!history[slug]) history[slug] = [];
+function goToEp(slug, num) {
+  const url = `watch.html?slug=${encodeURIComponent(currentSlug)}&ep=${num}`;
+  location.href = url;
+}
+
+function saveWatchHistory(slug, epNum) {
+  const hist = getLocal('watchHistory') || {};
+  if (!hist[slug]) hist[slug] = [];
   const epStr = String(epNum);
-  if (!history[slug].includes(epStr)) {
-    history[slug].push(epStr);
-  }
+  if (!hist[slug].includes(epStr)) hist[slug].push(epStr);
+  saveLocal('watchHistory', hist);
 
-  // Simpan juga info anime ke recent
-  if (animeData) {
-    let recent = getFromLocal('recentWatch') || [];
-    recent = recent.filter(a => a.slug !== slug);
-    recent.unshift({ slug, title: animeData.title, thumb: animeData.thumb, lastEp: epNum, timestamp: Date.now() });
-    if (recent.length > 20) recent = recent.slice(0, 20);
-    saveToLocal('recentWatch', recent);
-  }
-
-  saveToLocal('watchHistory', history);
+  // Recent watch
+  const recent = (getLocal('recentWatch') || []).filter(a => a.slug !== slug);
+  recent.unshift({
+    slug, title: animeData?.title||'', thumb: animeData?.thumb||'',
+    lastEp: epNum, timestamp: Date.now()
+  });
+  saveLocal('recentWatch', recent.slice(0, 30));
 }
