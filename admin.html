@@ -199,7 +199,7 @@
             <input id="cfg-apikey" placeholder="$2a$10$..." type="password">
             <div style="font-size:11px;color:var(--text2);margin-top:4px">Di JSONBin: klik foto profil → API Keys → copy key-nya</div>
           </div>
-          <button class="btn btn-primary" style="justify-content:center" onclick="saveAndTest()">💾 Simpan & Test Koneksi</button>
+          <button class="btn btn-primary" id="testBtn" style="width:100%;justify-content:center" onclick="saveAndTest()">💾 Simpan & Test Koneksi</button>
         </div>
         <div id="connStatus" class="conn-status"></div>
       </div>
@@ -298,27 +298,30 @@ async function jbSet(data) {
 
 // ── Test Koneksi ──────────────────────────────
 async function testConnection() {
-  const btn = document.querySelector('.btn-test');
+  const btn = document.getElementById('testBtn');
   const status = document.getElementById('connStatus');
-  btn.textContent = '⏳ Mengecek...';
-  btn.disabled = true;
-  status.style.display = 'none';
+  if (btn) { btn.textContent = '⏳ Mengecek...'; btn.disabled = true; }
+  if (status) status.style.display = 'none';
   try {
     const data = await jbGet();
     const count = data.animes?.length || 0;
-    status.className = 'conn-status conn-ok';
-    status.textContent = `✅ Koneksi berhasil! Bin berisi ${count} anime.`;
-    status.style.display = 'block';
-    // Sembunyikan warning di tab upload
+    if (status) {
+      status.className = 'conn-status conn-ok';
+      status.textContent = `✅ Koneksi berhasil! Bin berisi ${count} anime.`;
+      status.style.display = 'block';
+    }
     document.getElementById('connWarning').style.display = 'none';
     localStorage.setItem('kitsune_conn_ok', '1');
+    showAlert(`✅ Koneksi JSONBin berhasil! ${count} anime tersimpan.`, 'success');
   } catch(e) {
-    status.className = 'conn-status conn-fail';
-    status.textContent = `❌ Gagal: ${e.message}`;
-    status.style.display = 'block';
+    if (status) {
+      status.className = 'conn-status conn-fail';
+      status.textContent = `❌ Gagal: ${e.message}`;
+      status.style.display = 'block';
+    }
+    showAlert(`❌ Koneksi gagal: ${e.message}`, 'error');
   }
-  btn.textContent = '🔌 Test Koneksi JSONBin';
-  btn.disabled = false;
+  if (btn) { btn.textContent = '💾 Simpan & Test Koneksi'; btn.disabled = false; }
 }
 
 // ── Form Episode ──────────────────────────────
