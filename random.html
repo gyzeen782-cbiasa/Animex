@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Random Anime — Gynimex</title>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .random-center { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; padding:24px; text-align:center; gap:24px; }
+    .random-card { width:200px; border-radius:var(--rl); overflow:hidden; border:1px solid var(--border); background:var(--card); box-shadow:0 16px 48px rgba(0,0,0,.6); transition:all .4s; }
+    .random-card img { width:100%; aspect-ratio:3/4; object-fit:cover; }
+    .random-card-info { padding:14px; }
+    .random-card-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:6px; }
+    .random-card-meta { font-size:12px; color:var(--text2); }
+    .spin { animation:spinIn .5s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes spinIn { from{transform:rotateY(90deg) scale(.8);opacity:0} to{transform:rotateY(0deg) scale(1);opacity:1} }
+    .btn-random { display:inline-flex; align-items:center; gap:8px; padding:14px 32px; background:var(--accent); border-radius:12px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:#fff; cursor:pointer; border:none; transition:all .2s; box-shadow:0 4px 20px var(--accent-g); }
+    .btn-random:hover { transform:translateY(-2px) scale(1.02); }
+    .btn-random:active { transform:scale(.97); }
+    .random-hint { font-size:12px; color:var(--muted); }
+  </style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Gyni<span>mex</span></a>
+</nav>
+<div class="page mobile-page">
+  <div class="page-hd anim"><h1>Random Anime</h1><p>Bingung mau nonton apa? Biar kita pilihkan!</p></div>
+  <div class="random-center">
+    <div class="random-card anim anim-d1" id="randomCard" style="display:none">
+      <img id="randomThumb" src="" alt="">
+      <div class="random-card-info">
+        <div class="random-card-title" id="randomTitle"></div>
+        <div class="random-card-meta" id="randomMeta"></div>
+      </div>
+    </div>
+    <div id="randomPlaceholder" style="width:200px;height:280px;border-radius:var(--rl);background:var(--card);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px">
+      Tekan tombol di bawah
+    </div>
+    <button class="btn-random" id="randomBtn" onclick="pickRandom()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+      Pilihkan Anime!
+    </button>
+    <div id="randomActions" style="display:none;flex-direction:column;gap:10px;align-items:center">
+      <a href="#" class="btn-p" id="randomWatch"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Nonton Sekarang</a>
+      <a href="#" class="btn-s" id="randomDetail" style="font-size:13px">Lihat Detail</a>
+    </div>
+    <p class="random-hint" id="randomHint" style="display:none">Tidak cocok? Tekan lagi untuk yang baru!</p>
+  </div>
+  <div style="height:24px"></div>
+</div>
+<nav class="bnav"><div class="bnav-items">
+  <a href="index.html" class="bnav-item"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor"/></svg><span>Home</span></a>
+  <a href="jadwal.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Jadwal</span></a>
+  <a href="random.html" class="bnav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span>Random</span></a>
+  <a href="history.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Riwayat</span></a>
+  <a href="saved.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>Simpan</span></a>
+  <a href="profile.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Akun</span></a>
+</div></nav>
+<div class="toasts" id="toasts"></div>
+<script src="js/main.js"></script>
+<script>
+let animePool = [];
+
+async function loadPool() {
+  try {
+    const [r1, r2] = await Promise.all([fetch('/api/ongoing'), fetch('/api/complete')]);
+    const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
+    animePool = [...(d1.animes||[]), ...(d2.animes||[])];
+  } catch(e) {}
+}
+
+async function pickRandom() {
+  if (!animePool.length) await loadPool();
+  if (!animePool.length) { alert('Gagal memuat data anime.'); return; }
+  const anime = animePool[Math.floor(Math.random() * animePool.length)];
+  const card = document.getElementById('randomCard');
+  const placeholder = document.getElementById('randomPlaceholder');
+  document.getElementById('randomThumb').src = anime.thumb || '';
+  document.getElementById('randomTitle').textContent = anime.title;
+  document.getElementById('randomMeta').innerHTML = `${anime.status||''} ${anime.rating?'· ★ '+anime.rating:''}`;
+  const sl = encodeURIComponent(anime.slug||'');
+  document.getElementById('randomWatch').href = `watch.html?slug=${sl}&ep=1`;
+  document.getElementById('randomDetail').href = `anime.html?slug=${sl}`;
+  placeholder.style.display = 'none';
+  card.style.display = 'block';
+  card.classList.remove('spin');
+  void card.offsetWidth;
+  card.classList.add('spin');
+  document.getElementById('randomActions').style.display = 'flex';
+  document.getElementById('randomHint').style.display = 'block';
+}
+
+document.addEventListener('DOMContentLoaded', loadPool);
+</script>
+</body>
+</html>
