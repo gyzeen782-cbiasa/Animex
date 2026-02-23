@@ -50,7 +50,7 @@
 <script>
 let pool=[];
 async function loadPool(){
-  try{const[r1,r2]=await Promise.all([fetch('/api/ongoing'),fetch('/api/complete')]);const[d1,d2]=await Promise.all([r1.json(),r2.json()]);pool=[...(d1.animes||[]),...(d2.animes||[])];}catch(e){}
+  try{const[r1,r2]=await Promise.all([fetch('https://kitsuneid-api-production.up.railway.app/ongoing'),fetch('https://kitsuneid-api-production.up.railway.app/complete')]);const[d1,d2]=await Promise.all([r1.json(),r2.json()]);pool=[...(d1.animes||[]),...(d2.animes||[])];}catch(e){}
 }
 async function pickRandom(){
   if(!pool.length) await loadPool();
