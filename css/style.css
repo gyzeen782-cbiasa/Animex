@@ -38,8 +38,8 @@ img { display: block; max-width: 100%; }
 
 /* ── BOTTOM NAV — 6 items evenly spaced ── */
 .bottom-nav, .bnav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: var(--bnav); background: rgba(10,10,20,0.98); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 1000; }
-.bottom-nav-items, .bnav-items { display: flex; height: 100%; align-items: center; justify-content: space-around; padding: 0 4px; }
-.bottom-nav-item, .bnav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; flex: 1; height: 100%; cursor: pointer; transition: all .2s; color: var(--muted); font-size: 10px; font-weight: 500; font-family: 'Plus Jakarta Sans', sans-serif; text-decoration: none; }
+.bottom-nav-items, .bnav-items { display: grid; grid-template-columns: repeat(6, 1fr); height: 100%; width: 100%; }
+.bottom-nav-item, .bnav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 100%; cursor: pointer; transition: color .2s; color: var(--muted); text-decoration: none; }
 .bottom-nav-item.active, .bnav-item.active { color: var(--accent); }
 .bottom-nav-item svg, .bnav-item svg { width: 22px; height: 22px; }
 .bnav-item span, .bottom-nav-item span { font-size: 9.5px; font-weight: 500; line-height: 1; }
