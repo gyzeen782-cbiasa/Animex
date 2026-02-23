@@ -1,4 +1,5 @@
 // ===== ANIME.JS — Detail page logic =====
+const API = 'https://kitsuneid-api-production.up.railway.app';
 
 const slug = getParam('slug');
 let isSynopsisExpanded = false;
@@ -15,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadAnimeDetail(slug) {
   try {
-    const res = await fetch(`/api/anime?slug=${encodeURIComponent(slug)}`);
+    const res = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`);
     const data = await res.json();
 
     if (!data || !data.title) {
@@ -35,17 +36,15 @@ async function loadAnimeDetail(slug) {
 }
 
 function renderDetail(anime) {
-  // BG
   document.getElementById('detailBg').style.backgroundImage = `url('${anime.thumb}')`;
-  document.title = `${anime.title} — AnimeKu`;
+  document.title = `${anime.title} — KitsuneID`;
 
-  // Status badge
   const statusClass = anime.status === 'Ongoing' ? 'badge-ongoing' : 'badge-complete';
 
   document.getElementById('detailContent').innerHTML = `
     <div class="detail-poster">
       <img src="${anime.thumb}" alt="${anime.title}"
-           onerror="this.src='https://via.placeholder.com/180x240/12121f/7c5cfc?text=No+Image'">
+           onerror="this.src='https://placehold.co/180x240/12121f/7c5cfc?text=No+Image'">
     </div>
     <div class="detail-info">
       <div class="detail-badges">
@@ -60,7 +59,8 @@ function renderDetail(anime) {
       <div class="detail-stats">
         ${anime.episode ? `<div class="stat-item"><span class="stat-label">Episode</span><span class="stat-value">${anime.episode}</span></div>` : ''}
         ${anime.rating ? `<div class="stat-item"><span class="stat-label">Rating</span><span class="stat-value rating">★ ${anime.rating}</span></div>` : ''}
-        ${anime.year ? `<div class="stat-item"><span class="stat-label">Tahun</span><span class="stat-value">${anime.year}</span></div>` : ''}
+        ${anime.duration ? `<div class="stat-item"><span class="stat-label">Durasi</span><span class="stat-value">${anime.duration}</span></div>` : ''}
+        ${anime.aired ? `<div class="stat-item"><span class="stat-label">Tayang</span><span class="stat-value">${anime.aired}</span></div>` : ''}
         ${anime.studio ? `<div class="stat-item"><span class="stat-label">Studio</span><span class="stat-value">${anime.studio}</span></div>` : ''}
       </div>
 
@@ -85,13 +85,11 @@ function renderDetail(anime) {
     </div>
   `;
 
-  // Synopsis
   if (anime.synopsis) {
     document.getElementById('synopsisSection').style.display = 'block';
     document.getElementById('synopsisText').textContent = anime.synopsis;
   }
 
-  // Update save button if already saved
   if (isSaved) {
     const btn = document.getElementById('saveBtn');
     if (btn) {
@@ -108,17 +106,13 @@ function renderEpisodes(episodes) {
   section.style.display = 'block';
   document.getElementById('epCount').textContent = `${episodes.length} Episode`;
 
-  // History untuk tandai episode yg sudah ditonton
-  const history = getFromLocal('watchHistory') || {};
+  const history = getLocal('watchHistory') || {};  // FIX: getLocal bukan getFromLocal
   const watchedEps = history[slug] || [];
 
-  // Batch filter (tiap 50 episode)
   const batches = [];
   for (let i = 0; i < episodes.length; i += 50) {
     batches.push(`${i + 1}–${Math.min(i + 50, episodes.length)}`);
   }
-
-  let currentBatch = 0;
 
   const filterEl = document.getElementById('episodeFilter');
   if (batches.length > 1) {
@@ -130,7 +124,6 @@ function renderEpisodes(episodes) {
   window._episodes = episodes;
   window._watchedEps = watchedEps;
   window.showBatch = (batchIndex) => {
-    currentBatch = batchIndex;
     document.querySelectorAll('.filter-btn').forEach((b, i) => b.classList.toggle('active', i === batchIndex));
     renderEpisodeBatch(batchIndex);
   };
@@ -148,10 +141,11 @@ function renderEpisodeBatch(batchIndex) {
   list.innerHTML = batch.map((ep, i) => {
     const epNum = ep.episode || (start + i + 1);
     const isWatched = watchedEps.includes(String(epNum));
-    const epSlug = encodeURIComponent(ep.slug || slug);
+    // FIX: slug episode yang benar → pakai ep.slug, bukan slug anime
+    const animeSlug = encodeURIComponent(slug);
 
     return `
-      <a href="watch.html?slug=${epSlug}&ep=${epNum}" class="episode-item ${isWatched ? 'watched' : ''}">
+      <a href="watch.html?slug=${animeSlug}&ep=${epNum}" class="episode-item ${isWatched ? 'watched' : ''}">
         <span class="ep-num">${epNum}</span>
         <div class="ep-info">
           <div class="ep-title">${ep.title || `Episode ${epNum}`}</div>
@@ -168,7 +162,6 @@ function renderEpisodeBatch(batchIndex) {
   }).join('');
 }
 
-// ── Synopsis toggle ──────────────────────
 function toggleSynopsis() {
   const text = document.getElementById('synopsisText');
   const toggle = document.getElementById('synopsisToggle');
@@ -177,14 +170,13 @@ function toggleSynopsis() {
   toggle.textContent = isSynopsisExpanded ? 'Sembunyikan ▴' : 'Baca Selengkapnya ▾';
 }
 
-// ── Save / Unsave ────────────────────────
 function checkSaved() {
-  const saved = getFromLocal('savedAnimes') || [];
+  const saved = getLocal('savedAnimes') || [];  // FIX: getLocal
   isSaved = saved.some(a => a.slug === slug);
 }
 
 function toggleSave(anime) {
-  let saved = getFromLocal('savedAnimes') || [];
+  let saved = getLocal('savedAnimes') || [];  // FIX: getLocal
   const idx = saved.findIndex(a => a.slug === slug);
   const btn = document.getElementById('saveBtn');
   const text = document.getElementById('saveBtnText');
@@ -203,5 +195,5 @@ function toggleSave(anime) {
     showToast('Dihapus dari simpan.', 'info');
   }
 
-  saveToLocal('savedAnimes', saved);
+  saveLocal('savedAnimes', saved);  // FIX: saveLocal
 }
