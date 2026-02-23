@@ -70,13 +70,24 @@ function renderPage(){
       </div>`;
   }
 }
+let _loginLock = false;
 function doLogin(){
-  const name=document.getElementById('nameIn').value.trim();
-  const email=document.getElementById('emailIn').value.trim();
-  const pass=document.getElementById('passIn').value;
-  if(!name||!email||!pass){showToast('Semua field wajib diisi','info');return;}
-  saveLocal('user',{name,email}); showToast('Berhasil masuk!','success');
-  setTimeout(()=>renderPage(),500);
+  if(_loginLock) return;
+  const name=document.getElementById('nameIn')?.value.trim();
+  const email=document.getElementById('emailIn')?.value.trim();
+  const pass=document.getElementById('passIn')?.value;
+  if(!name||!email||!pass){
+    // Hanya tampilkan 1 toast, tidak spam
+    const existing = document.querySelectorAll('.toast');
+    if(!existing.length) showToast('Semua field wajib diisi','info');
+    return;
+  }
+  _loginLock = true;
+  const btn = document.querySelector('.login-box .btn-p');
+  if(btn){ btn.textContent='Memuat...'; btn.style.opacity='0.6'; btn.style.pointerEvents='none'; }
+  saveLocal('user',{name,email,pass});
+  showToast('Berhasil masuk!','success');
+  setTimeout(()=>{ _loginLock=false; renderPage(); },800);
 }
 function logout(){
   if(!confirm('Yakin keluar?')) return;
