@@ -1,213 +1,111 @@
-// ===== HOME.JS — Homepage logic =====
+// ===== home.js =====
+const API = '/api';
+let heroList = [], heroIdx = 0, heroTimer = null;
 
-const API_BASE = '/api';
-
-// Data hero carousel
-let heroAnimes = [];
-let currentHero = 0;
-let heroTimer = null;
-
-// ── Init ─────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadOngoing();
   loadComplete();
   initSearch();
 });
 
-// ── Load Ongoing Anime ───────────────────
 async function loadOngoing() {
   try {
-    const res = await fetch(`${API_BASE}/ongoing`);
-    const data = await res.json();
-
-    if (!data.animes || data.animes.length === 0) {
-      document.getElementById('ongoingGrid').innerHTML =
-        '<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
-      return;
-    }
-
-    // Set hero dari 5 anime pertama
-    heroAnimes = data.animes.slice(0, 5);
-    renderHero(0);
-    renderHeroDots();
-
-    // Render grid
-    const grid = document.getElementById('ongoingGrid');
-    grid.innerHTML = data.animes.slice(0, 12).map(a => createAnimeCard(a, true)).join('');
-
-    // Auto slide hero
-    heroTimer = setInterval(() => {
-      currentHero = (currentHero + 1) % heroAnimes.length;
-      renderHero(currentHero);
-    }, 5000);
-
-    // Load jadwal
-    loadSchedule(data.animes);
-
-  } catch (err) {
-    console.error('Gagal load ongoing:', err);
-    document.getElementById('ongoingGrid').innerHTML =
-      '<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Gagal memuat data. Coba refresh.</p>';
+    const r = await fetch(`${API}/ongoing`);
+    const d = await r.json();
+    if (!d.animes?.length) { document.getElementById('ongoingGrid').innerHTML='<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>'; return; }
+    heroList = d.animes.slice(0,5);
+    renderHero(0); renderDots();
+    heroTimer = setInterval(() => renderHero((heroIdx+1)%heroList.length), 5000);
+    document.getElementById('ongoingGrid').innerHTML = d.animes.slice(0,12).map(a=>makeCard(a,true)).join('');
+    loadSchedule(d.animes);
+  } catch(e) {
+    document.getElementById('ongoingGrid').innerHTML='<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
   }
 }
 
-// ── Load Complete Anime ──────────────────
 async function loadComplete() {
   try {
-    const res = await fetch(`${API_BASE}/complete`);
-    const data = await res.json();
-
-    if (!data.animes || data.animes.length === 0) return;
-
-    const grid = document.getElementById('completeGrid');
-    grid.innerHTML = data.animes.slice(0, 12).map(a => createAnimeCard(a)).join('');
-
-  } catch (err) {
-    document.getElementById('completeGrid').innerHTML =
-      '<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Gagal memuat data.</p>';
-  }
+    const r = await fetch(`${API}/complete`);
+    const d = await r.json();
+    if (!d.animes?.length) return;
+    document.getElementById('completeGrid').innerHTML = d.animes.slice(0,12).map(a=>makeCard(a)).join('');
+  } catch(e) {}
 }
 
-// ── Render Hero ──────────────────────────
-function renderHero(index) {
-  const anime = heroAnimes[index];
-  if (!anime) return;
-
-  const bg = document.getElementById('heroBg');
-  const title = document.getElementById('heroTitle');
-  const meta = document.getElementById('heroMeta');
-  const desc = document.getElementById('heroDesc');
-  const watchBtn = document.getElementById('heroWatchBtn');
-  const detailBtn = document.getElementById('heroDetailBtn');
-
-  // Transition effect
-  const heroContent = document.getElementById('heroContent');
-  heroContent.style.opacity = '0';
-  heroContent.style.transform = 'translateY(8px)';
-
+function renderHero(idx) {
+  const a = heroList[idx]; if(!a) return;
+  heroIdx = idx;
+  const body = document.getElementById('heroBody');
+  body.style.cssText = 'opacity:0;transform:translateY(8px);transition:none';
   setTimeout(() => {
-    bg.style.backgroundImage = `url('${anime.thumb}')`;
-    title.textContent = anime.title;
-    desc.textContent = anime.synopsis || 'Tidak ada sinopsis.';
-
-    meta.innerHTML = `
-      ${anime.rating ? `<span class="hero-meta-item rating-star">★ <span style="color:var(--text-secondary)">${anime.rating}</span></span>` : ''}
-      ${anime.episode ? `<span class="hero-meta-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg> Ep ${anime.episode}</span>` : ''}
-      ${anime.type ? `<span class="hero-meta-item" style="background:var(--accent-soft);padding:2px 8px;border-radius:20px;font-size:11px;color:var(--accent)">${anime.type}</span>` : ''}
+    document.getElementById('heroBg').style.backgroundImage = `url('${a.thumb}')`;
+    document.getElementById('heroTitle').textContent = a.title;
+    document.getElementById('heroDesc').textContent = a.synopsis || 'Tidak ada sinopsis.';
+    document.getElementById('heroMeta').innerHTML = `
+      ${a.rating?`<span class="hero-mi" style="color:#fbbf24">★ <span style="color:var(--text2)">${a.rating}</span></span>`:''}
+      ${a.episode?`<span class="hero-mi"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M17 2l-5 5-5-5"/></svg>Ep ${a.episode}</span>`:''}
+      ${a.type?`<span style="background:var(--accent-s);padding:2px 8px;border-radius:20px;font-size:10px;color:var(--accent)">${a.type}</span>`:''}
     `;
-
-    const slug = encodeURIComponent(anime.slug || '');
-    watchBtn.href = `watch.html?slug=${slug}&ep=1`;
-    detailBtn.href = `anime.html?slug=${slug}`;
-
-    heroContent.style.opacity = '1';
-    heroContent.style.transition = 'opacity 0.4s, transform 0.4s';
-    heroContent.style.transform = 'translateY(0)';
-
-    // Update dots
-    document.querySelectorAll('.hero-dot').forEach((dot, i) => {
-      dot.classList.toggle('active', i === index);
-    });
-    currentHero = index;
-  }, 200);
+    const sl = encodeURIComponent(a.slug||'');
+    document.getElementById('heroWatch').href = `watch.html?slug=${sl}&ep=1`;
+    document.getElementById('heroDetail').href = `anime.html?slug=${sl}`;
+    body.style.cssText = 'opacity:1;transform:translateY(0);transition:opacity .4s,transform .4s';
+    document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
+  }, 180);
 }
 
-// ── Hero Dots ───────────────────────────
-function renderHeroDots() {
-  const dots = document.getElementById('heroDots');
-  dots.innerHTML = heroAnimes.map((_, i) => `
-    <div class="hero-dot ${i === 0 ? 'active' : ''}" onclick="selectHero(${i})"></div>
-  `).join('');
+function renderDots() {
+  document.getElementById('heroDots').innerHTML = heroList.map((_,i)=>`<div class="hero-dot ${i===0?'active':''}" onclick="selectHero(${i})"></div>`).join('');
 }
 
-function selectHero(index) {
+window.selectHero = function(i) {
   clearInterval(heroTimer);
-  renderHero(index);
-  heroTimer = setInterval(() => {
-    currentHero = (currentHero + 1) % heroAnimes.length;
-    renderHero(currentHero);
-  }, 5000);
-}
+  renderHero(i);
+  heroTimer = setInterval(() => renderHero((heroIdx+1)%heroList.length), 5000);
+};
 
-// ── Jadwal hari ini ──────────────────────
 function loadSchedule(animes) {
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
   const today = days[new Date().getDay()];
-
-  const todayAnimes = animes.filter(a => a.day && a.day.includes(today));
-  const grid = document.getElementById('scheduleGrid');
-
-  if (todayAnimes.length === 0) {
-    grid.innerHTML = `<p style="color:var(--text-muted);font-size:13px;grid-column:1/-1">Tidak ada anime hari ini (${today}).</p>`;
-    return;
-  }
-
-  grid.innerHTML = todayAnimes.slice(0, 6).map(a => createOngoingCard(a)).join('');
+  const todayList = animes.filter(a=>a.day&&a.day.includes(today));
+  const el = document.getElementById('scheduleGrid');
+  if (!todayList.length) { el.innerHTML=`<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada anime hari ini (${today}).</p>`; return; }
+  el.innerHTML = todayList.slice(0,6).map(a=>makeOC(a)).join('');
 }
 
-// ── Search ───────────────────────────────
 function initSearch() {
-  const inputs = [
-    document.getElementById('searchInput'),
-    document.getElementById('mobileSearchInput')
-  ].filter(Boolean);
-
-  let searchTimeout;
-
-  inputs.forEach(input => {
-    input.addEventListener('input', (e) => {
-      clearTimeout(searchTimeout);
+  const inputs = [document.getElementById('searchInput'), document.getElementById('mSearchInput')].filter(Boolean);
+  let timer;
+  inputs.forEach(inp => {
+    inp.addEventListener('input', e => {
+      clearTimeout(timer);
       const q = e.target.value.trim();
-      if (q.length < 2) {
-        closeSearch();
-        return;
-      }
-      searchTimeout = setTimeout(() => doSearch(q), 400);
+      if (q.length < 2) { closeSearch(); return; }
+      timer = setTimeout(() => doSearch(q), 400);
     });
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeSearch();
-    });
+    inp.addEventListener('keydown', e => { if(e.key==='Escape') closeSearch(); });
   });
-
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.navbar-search') && !e.target.closest('.mobile-search')) {
-      closeSearch();
-    }
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.nav-search') && !e.target.closest('.m-search')) closeSearch();
   });
 }
 
-async function doSearch(query) {
-  const overlay = document.getElementById('searchOverlay');
-  overlay.classList.add('active');
-  overlay.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Mencari...</p>';
-
+async function doSearch(q) {
+  const ov = document.getElementById('searchOv');
+  ov.classList.add('show');
+  ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Mencari...</p>';
   try {
-    const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
-    const data = await res.json();
-
-    if (!data.results || data.results.length === 0) {
-      overlay.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Tidak ditemukan.</p>';
-      return;
-    }
-
-    overlay.innerHTML = data.results.slice(0, 8).map(a => `
-      <a href="anime.html?slug=${encodeURIComponent(a.slug || '')}" class="search-result-item" onclick="closeSearch()">
-        <img src="${a.thumb}" class="search-result-thumb"
-             onerror="this.src='https://via.placeholder.com/40x54/12121f/7c5cfc?text=?'">
-        <div class="search-result-info">
-          <div class="search-result-title">${a.title}</div>
-          <div class="search-result-meta">${a.status || ''} ${a.episode ? '· Ep ' + a.episode : ''}</div>
-        </div>
-      </a>
-    `).join('');
-
-  } catch (err) {
-    overlay.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Gagal mencari.</p>';
-  }
+    const r = await fetch(`${API}/search?q=${encodeURIComponent(q)}`);
+    const d = await r.json();
+    if (!d.results?.length) { ov.innerHTML='<p style="color:var(--muted);font-size:13px">Tidak ditemukan.</p>'; return; }
+    ov.innerHTML = d.results.slice(0,8).map(a=>`
+      <a href="anime.html?slug=${encodeURIComponent(a.slug||'')}" class="sr-item" onclick="closeSearch()">
+        <img src="${a.thumb}" class="sr-thumb" onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
+        <div><div class="sr-title">${a.title}</div><div class="sr-meta">${a.status||''}</div></div>
+      </a>`).join('');
+  } catch(e) { ov.innerHTML='<p style="color:var(--muted);font-size:13px">Gagal mencari.</p>'; }
 }
 
 function closeSearch() {
-  const overlay = document.getElementById('searchOverlay');
-  overlay.classList.remove('active');
+  document.getElementById('searchOv')?.classList.remove('show');
 }
