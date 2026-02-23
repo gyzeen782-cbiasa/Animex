@@ -2,49 +2,38 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Random Anime — Gynimex</title>
+  <title>Random — KitsuneID</title>
   <link rel="stylesheet" href="css/style.css"/>
   <style>
-    .random-center { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; padding:24px; text-align:center; gap:24px; }
-    .random-card { width:200px; border-radius:var(--rl); overflow:hidden; border:1px solid var(--border); background:var(--card); box-shadow:0 16px 48px rgba(0,0,0,.6); transition:all .4s; }
-    .random-card img { width:100%; aspect-ratio:3/4; object-fit:cover; }
-    .random-card-info { padding:14px; }
-    .random-card-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:6px; }
-    .random-card-meta { font-size:12px; color:var(--text2); }
-    .spin { animation:spinIn .5s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes spinIn { from{transform:rotateY(90deg) scale(.8);opacity:0} to{transform:rotateY(0deg) scale(1);opacity:1} }
-    .btn-random { display:inline-flex; align-items:center; gap:8px; padding:14px 32px; background:var(--accent); border-radius:12px; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:#fff; cursor:pointer; border:none; transition:all .2s; box-shadow:0 4px 20px var(--accent-g); }
-    .btn-random:hover { transform:translateY(-2px) scale(1.02); }
-    .btn-random:active { transform:scale(.97); }
-    .random-hint { font-size:12px; color:var(--muted); }
+    .random-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:65vh;padding:24px;text-align:center;gap:20px}
+    .rcard{width:180px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border);background:var(--card);box-shadow:0 16px 40px rgba(0,0,0,.5);transition:all .4s}
+    .rcard img{width:100%;aspect-ratio:3/4;object-fit:cover}
+    .rcard-info{padding:12px}
+    .rcard-title{font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;margin-bottom:4px}
+    .rcard-meta{font-size:11px;color:var(--text2)}
+    @keyframes spinIn{from{transform:rotateY(90deg) scale(.8);opacity:0}to{transform:rotateY(0) scale(1);opacity:1}}
+    .spin{animation:spinIn .5s cubic-bezier(.34,1.56,.64,1)}
+    .btn-random{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:var(--accent);border-radius:12px;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;color:#fff;cursor:pointer;border:none;transition:all .2s;box-shadow:0 4px 20px var(--accent-g)}
+    .btn-random:hover{transform:translateY(-2px) scale(1.02)}
+    .btn-random:active{transform:scale(.97)}
   </style>
 </head>
 <body>
-<nav class="navbar">
-  <a href="index.html" class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#7c5cfc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Gyni<span>mex</span></a>
-</nav>
+<nav class="navbar"><a href="index.html" class="logo"></a></nav>
 <div class="page mobile-page">
   <div class="page-hd anim"><h1>Random Anime</h1><p>Bingung mau nonton apa? Biar kita pilihkan!</p></div>
-  <div class="random-center">
-    <div class="random-card anim anim-d1" id="randomCard" style="display:none">
-      <img id="randomThumb" src="" alt="">
-      <div class="random-card-info">
-        <div class="random-card-title" id="randomTitle"></div>
-        <div class="random-card-meta" id="randomMeta"></div>
-      </div>
+  <div class="random-wrap">
+    <div id="rPlaceholder" style="width:180px;height:252px;border-radius:var(--rl);background:var(--card);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px">Tekan tombol</div>
+    <div class="rcard anim anim-d1" id="rcard" style="display:none">
+      <img id="rThumb" src="" alt="">
+      <div class="rcard-info"><div class="rcard-title" id="rTitle"></div><div class="rcard-meta" id="rMeta"></div></div>
     </div>
-    <div id="randomPlaceholder" style="width:200px;height:280px;border-radius:var(--rl);background:var(--card);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px">
-      Tekan tombol di bawah
+    <button class="btn-random" onclick="pickRandom()">🎲 Pilihkan Anime!</button>
+    <div id="rActions" style="display:none;flex-direction:column;gap:10px;align-items:center">
+      <a href="#" class="btn-p" id="rWatch">▶ Nonton Sekarang</a>
+      <a href="#" class="btn-s" id="rDetail" style="font-size:13px">Lihat Detail</a>
     </div>
-    <button class="btn-random" id="randomBtn" onclick="pickRandom()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-      Pilihkan Anime!
-    </button>
-    <div id="randomActions" style="display:none;flex-direction:column;gap:10px;align-items:center">
-      <a href="#" class="btn-p" id="randomWatch"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>Nonton Sekarang</a>
-      <a href="#" class="btn-s" id="randomDetail" style="font-size:13px">Lihat Detail</a>
-    </div>
-    <p class="random-hint" id="randomHint" style="display:none">Tidak cocok? Tekan lagi untuk yang baru!</p>
+    <p id="rHint" style="display:none;font-size:12px;color:var(--muted)">Tidak cocok? Tekan lagi!</p>
   </div>
   <div style="height:24px"></div>
 </div>
@@ -59,38 +48,27 @@
 <div class="toasts" id="toasts"></div>
 <script src="js/main.js"></script>
 <script>
-let animePool = [];
-
-async function loadPool() {
-  try {
-    const [r1, r2] = await Promise.all([fetch('/api/ongoing'), fetch('/api/complete')]);
-    const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
-    animePool = [...(d1.animes||[]), ...(d2.animes||[])];
-  } catch(e) {}
+let pool=[];
+async function loadPool(){
+  try{const[r1,r2]=await Promise.all([fetch('/api/ongoing'),fetch('/api/complete')]);const[d1,d2]=await Promise.all([r1.json(),r2.json()]);pool=[...(d1.animes||[]),...(d2.animes||[])];}catch(e){}
 }
-
-async function pickRandom() {
-  if (!animePool.length) await loadPool();
-  if (!animePool.length) { alert('Gagal memuat data anime.'); return; }
-  const anime = animePool[Math.floor(Math.random() * animePool.length)];
-  const card = document.getElementById('randomCard');
-  const placeholder = document.getElementById('randomPlaceholder');
-  document.getElementById('randomThumb').src = anime.thumb || '';
-  document.getElementById('randomTitle').textContent = anime.title;
-  document.getElementById('randomMeta').innerHTML = `${anime.status||''} ${anime.rating?'· ★ '+anime.rating:''}`;
-  const sl = encodeURIComponent(anime.slug||'');
-  document.getElementById('randomWatch').href = `watch.html?slug=${sl}&ep=1`;
-  document.getElementById('randomDetail').href = `anime.html?slug=${sl}`;
-  placeholder.style.display = 'none';
-  card.style.display = 'block';
-  card.classList.remove('spin');
-  void card.offsetWidth;
-  card.classList.add('spin');
-  document.getElementById('randomActions').style.display = 'flex';
-  document.getElementById('randomHint').style.display = 'block';
+async function pickRandom(){
+  if(!pool.length) await loadPool();
+  if(!pool.length){showToast('Gagal memuat data','error');return;}
+  const a=pool[Math.floor(Math.random()*pool.length)];
+  const card=document.getElementById('rcard');
+  document.getElementById('rThumb').src=a.thumb||'';
+  document.getElementById('rTitle').textContent=a.title||'';
+  document.getElementById('rMeta').textContent=`${a.status||''} ${a.rating?'· ★ '+a.rating:''}`;
+  const sl=encodeURIComponent(a.slug||'');
+  document.getElementById('rWatch').href=`watch.html?slug=${sl}&ep=1`;
+  document.getElementById('rDetail').href=`anime.html?slug=${sl}`;
+  document.getElementById('rPlaceholder').style.display='none';
+  card.style.display='block'; card.classList.remove('spin'); void card.offsetWidth; card.classList.add('spin');
+  document.getElementById('rActions').style.display='flex';
+  document.getElementById('rHint').style.display='block';
 }
-
-document.addEventListener('DOMContentLoaded', loadPool);
+document.addEventListener('DOMContentLoaded',loadPool);
 </script>
 </body>
 </html>
