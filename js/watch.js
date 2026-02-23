@@ -26,7 +26,7 @@ async function getCustomAnime(slug) {
       headers: { 'X-Master-Key': JSONBIN_KEY }
     });
     const d = await r.json();
-    return (d.record?.animes || []).find(a => a.slug === slug) || null;
+    const record = d.record ?? d; return (record.animes || []).find(a => a.slug === slug) || null;
   } catch(e) { return null; }
 }
 
