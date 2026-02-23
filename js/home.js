@@ -1,5 +1,5 @@
 // ===== home.js — KitsuneID =====
-const API = '/api';
+const API = 'kitsuneid-api-production.up.railway.app';
 let heroList = [], heroIdx = 0, heroTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
