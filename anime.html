@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Detail Anime — AnimeKu</title>
+  <title>Detail Anime — KitsuneID</title>
   <link rel="stylesheet" href="css/style.css"/>
   <style>
     .detail-hero {
@@ -373,7 +373,7 @@
     Kembali
   </button>
   <a href="index.html" class="navbar-logo" style="margin-left: auto; margin-right: auto; transform: translateX(-30px);">
-    Anime<span>Ku</span>
+    Kitsune<span>ID</span>
   </a>
   <div class="navbar-actions">
     <a href="login.html" class="btn-login">Masuk</a>
@@ -421,32 +421,18 @@
 </div>
 
 <!-- BOTTOM NAV -->
-<nav class="bottom-nav">
-  <div class="bottom-nav-items">
-    <a href="index.html" class="bottom-nav-item">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      Home
-    </a>
-    <a href="jadwal.html" class="bottom-nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      Jadwal
-    </a>
-    <a href="history.html" class="bottom-nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      Riwayat
-    </a>
-    <a href="saved.html" class="bottom-nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      Simpan
-    </a>
-    <a href="profile.html" class="bottom-nav-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profil
-    </a>
+<nav class="bnav">
+  <div class="bnav-items">
+    <a href="index.html" class="bnav-item"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="currentColor"/></svg><span>Home</span></a>
+    <a href="jadwal.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Jadwal</span></a>
+    <a href="random.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg><span>Random</span></a>
+    <a href="history.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Riwayat</span></a>
+    <a href="saved.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>Simpan</span></a>
+    <a href="profile.html" class="bnav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Akun</span></a>
   </div>
 </nav>
 
-<div class="toast-container" id="toastContainer"></div>
+<div class="toasts" id="toasts"></div>
 
 <script src="js/main.js"></script>
 <script src="js/anime.js"></script>
