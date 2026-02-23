@@ -1,344 +1,236 @@
-// ===== api/scrape.js — Vercel Serverless Function =====
-// File ini adalah "inti" dari backend.
-// Semua route /api/* akan memanggil fungsi ini via vercel.json routing.
-
+// ===== api/scrape.js — Gynimex Backend =====
 const https = require('https');
 const http = require('http');
-
 const BASE_URL = 'https://otakudesu.best';
 
-// ── Helper: Fetch HTML ───────────────────
 function fetchHTML(url) {
   return new Promise((resolve, reject) => {
     const lib = url.startsWith('https') ? https : http;
-    const options = {
+    const req = lib.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8',
-        'Referer': BASE_URL,
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
       }
-    };
-
-    lib.get(url, options, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => resolve(data));
-    }).on('error', reject);
+    }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return fetchHTML(res.headers.location).then(resolve).catch(reject);
+      }
+      const chunks = [];
+      res.on('data', c => chunks.push(c));
+      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error('Timeout')); });
   });
 }
 
-// ── Helper: Extract between tags ─────────
-function extractBetween(html, start, end) {
-  const s = html.indexOf(start);
-  if (s === -1) return null;
-  const e = html.indexOf(end, s + start.length);
-  if (e === -1) return null;
-  return html.substring(s + start.length, e).trim();
+let parse;
+try { parse = require('node-html-parser').parse; }
+catch(e) { parse = () => ({ querySelector:()=>null, querySelectorAll:()=>[] }); }
+
+const txt = el => el ? el.text.trim() : '';
+const attr = (el, at) => el ? (el.getAttribute(at)||'') : '';
+const getSrc = el => el ? (el.getAttribute('src')||el.getAttribute('data-src')||'') : '';
+const getHref = el => el ? (el.getAttribute('href')||'') : '';
+const toSlug = url => url.replace(BASE_URL,'').replace(/^\/(anime|episode)\//,'').replace(/\/$/,'');
+
+// ── Ongoing ──────────────────────────────
+async function scrapeOngoing(page) {
+  const url = page > 1
+    ? `${BASE_URL}/ongoing-anime/page/${page}/`
+    : `${BASE_URL}/ongoing-anime/`;
+  const doc = parse(await fetchHTML(url));
+  const animes = [];
+  doc.querySelectorAll('.venz ul li').forEach(li => {
+    const link = li.querySelector('a');
+    const img = li.querySelector('img');
+    const title = txt(li.querySelector('.jdlflm') || li.querySelector('h2') || link);
+    const ep = txt(li.querySelector('.epz') || li.querySelector('.episode')).replace(/\D/g,'');
+    const rating = txt(li.querySelector('.epztipe') || li.querySelector('.rattingflm')).replace(/[^0-9.]/g,'');
+    const day = txt(li.querySelector('.epzdesc') || li.querySelector('.epsdate'));
+    const animeUrl = getHref(link);
+    if (!animeUrl.includes('/anime/')) return;
+    const sl = toSlug(animeUrl);
+    if (!sl || animes.find(x => x.slug === sl)) return;
+    animes.push({ title, slug:sl, url:animeUrl, thumb:getSrc(img), episode:ep||null, rating:rating||null, day:day||null, status:'Ongoing', type:'TV' });
+  });
+  return animes;
 }
 
-// ── Helper: Extract all matches ──────────
-function extractAll(html, regex) {
+// ── Complete ─────────────────────────────
+async function scrapeComplete(page) {
+  const url = page > 1
+    ? `${BASE_URL}/complete-anime/page/${page}/`
+    : `${BASE_URL}/complete-anime/`;
+  const doc = parse(await fetchHTML(url));
+  const animes = [];
+  doc.querySelectorAll('.venz ul li').forEach(li => {
+    const link = li.querySelector('a');
+    const img = li.querySelector('img');
+    const title = txt(li.querySelector('.jdlflm') || li.querySelector('h2') || link);
+    const ep = txt(li.querySelector('.epz') || li.querySelector('.episode')).replace(/\D/g,'');
+    const rating = txt(li.querySelector('.epztipe') || li.querySelector('.rattingflm')).replace(/[^0-9.]/g,'');
+    const animeUrl = getHref(link);
+    if (!animeUrl.includes('/anime/')) return;
+    const sl = toSlug(animeUrl);
+    if (!sl || animes.find(x => x.slug === sl)) return;
+    animes.push({ title, slug:sl, url:animeUrl, thumb:getSrc(img), episode:ep||null, rating:rating||null, status:'Complete', type:'TV' });
+  });
+  return animes;
+}
+
+// ── Jadwal ───────────────────────────────
+async function scrapeSchedule() {
+  const doc = parse(await fetchHTML(`${BASE_URL}/jadwal-rilis/`));
+  const schedules = [];
+  doc.querySelectorAll('.kglist321').forEach(block => {
+    const day = txt(block.querySelector('h2'));
+    const animeList = block.querySelectorAll('ul li a').map(a2 => ({
+      title: txt(a2), slug: toSlug(getHref(a2)), url: getHref(a2)
+    }));
+    if (day) schedules.push({ day, animeList });
+  });
+  return schedules;
+}
+
+// ── Search ───────────────────────────────
+async function scrapeSearch(query) {
+  const doc = parse(await fetchHTML(`${BASE_URL}/?s=${encodeURIComponent(query)}`));
   const results = [];
-  let match;
-  const re = new RegExp(regex.source, 'gi');
-  while ((match = re.exec(html)) !== null) {
-    results.push(match);
-  }
+  doc.querySelectorAll('ul.chivsrc li').forEach(li => {
+    const link = li.querySelector('a');
+    const img = li.querySelector('img');
+    const title = txt(li.querySelector('h2')) || txt(link);
+    const animeUrl = getHref(link);
+    if (!animeUrl) return;
+    results.push({ title, slug:toSlug(animeUrl), url:animeUrl, thumb:getSrc(img) });
+  });
   return results;
 }
 
-// ── Helper: Strip HTML tags ──────────────
-function stripTags(html) {
-  return html.replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#[0-9]+;/g, '').replace(/\s+/g, ' ').trim();
-}
-
-// ── Helper: Extract slug from URL ────────
-function urlToSlug(url) {
-  return url.replace(BASE_URL, '').replace(/^\/anime\//, '').replace(/\/$/, '');
-}
-
-// ═══════════════════════════════════════════
-// SCRAPERS
-// ═══════════════════════════════════════════
-
-// ── Scrape Ongoing Anime ─────────────────
-async function scrapeOngoing() {
-  const html = await fetchHTML(`${BASE_URL}/ongoing-anime/`);
-
-  const animes = [];
-  // Cari tiap card di ongoing
-  const cardRegex = /<div class=".*?"><a href="(https?:\/\/[^"]+)"[^>]*>.*?<img[^>]+src="([^"]+)"[^>]*alt="([^"]+)".*?<\/a>/gi;
-
-  // Cara alternatif: cari semua link anime + gambar
-  const matches = extractAll(html, /<a href="(https:\/\/otakudesu\.best\/anime\/[^"]+)"[^>]*>[\s\S]*?<img[^>]+src="([^"]+)"[\s\S]*?<\/a>/i);
-
-  // Fallback: parse lebih manual
-  const blocks = html.split('<div class="');
-  blocks.forEach(block => {
-    const linkMatch = block.match(/href="(https:\/\/otakudesu\.best\/anime\/[^"]+)"/);
-    const imgMatch = block.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-    const titleMatch = block.match(/<h2[^>]*>([^<]+)<\/h2>/) || block.match(/<span[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)<\/span>/i);
-    const epMatch = block.match(/Episode\s*(\d+)/i);
-    const ratingMatch = block.match(/(\d+\.\d+)/);
-
-    if (linkMatch && imgMatch) {
-      const url = linkMatch[1];
-      const slug = urlToSlug(url);
-      const title = titleMatch ? stripTags(titleMatch[1]) : slug.replace(/-sub-indo$/, '').replace(/-/g, ' ');
-
-      if (slug && !animes.find(a => a.slug === slug)) {
-        animes.push({
-          title,
-          slug,
-          url,
-          thumb: imgMatch[1],
-          episode: epMatch ? epMatch[1] : null,
-          rating: ratingMatch ? ratingMatch[1] : null,
-          status: 'Ongoing',
-          type: 'TV'
-        });
-      }
-    }
-  });
-
-  return animes.slice(0, 24);
-}
-
-// ── Scrape Complete Anime ────────────────
-async function scrapeComplete() {
-  const html = await fetchHTML(`${BASE_URL}/complete-anime/`);
-  const animes = [];
-
-  const blocks = html.split('<div class="');
-  blocks.forEach(block => {
-    const linkMatch = block.match(/href="(https:\/\/otakudesu\.best\/anime\/[^"]+)"/);
-    const imgMatch = block.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-    const titleMatch = block.match(/<h2[^>]*>([^<]+)<\/h2>/);
-    const epMatch = block.match(/(\d+)\s*Episode/i);
-    const ratingMatch = block.match(/(\d+\.\d+)/);
-
-    if (linkMatch && imgMatch) {
-      const url = linkMatch[1];
-      const slug = urlToSlug(url);
-      const title = titleMatch ? stripTags(titleMatch[1]) : slug.replace(/-sub-indo$/, '').replace(/-/g, ' ');
-
-      if (slug && !animes.find(a => a.slug === slug)) {
-        animes.push({
-          title,
-          slug,
-          url,
-          thumb: imgMatch[1],
-          episode: epMatch ? epMatch[1] : null,
-          rating: ratingMatch ? ratingMatch[1] : null,
-          status: 'Complete',
-          type: 'TV'
-        });
-      }
-    }
-  });
-
-  return animes.slice(0, 24);
-}
-
-// ── Scrape Anime Detail ──────────────────
-async function scrapeAnimeDetail(slug) {
-  const url = `${BASE_URL}/anime/${slug}/`;
-  const html = await fetchHTML(url);
-
-  // Title
-  const titleMatch = html.match(/<h1[^>]*class="[^"]*entry-title[^"]*"[^>]*>([^<]+)<\/h1>/i)
-    || html.match(/<h1[^>]*>([^<]+)<\/h1>/);
-  const title = titleMatch ? stripTags(titleMatch[1]) : slug.replace(/-/g, ' ');
-
-  // Thumb
-  const thumbMatch = html.match(/property="og:image"\s+content="([^"]+)"/)
-    || html.match(/<img[^>]+class="[^"]*wp-post-image[^"]*"[^>]+src="([^"]+)"/i);
-  const thumb = thumbMatch ? thumbMatch[1] : '';
-
-  // Synopsis
-  const synopsisMatch = html.match(/<div[^>]*class="[^"]*synopsiseries[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
-  const synopsis = synopsisMatch ? stripTags(synopsisMatch[1]) : '';
-
-  // Rating
-  const ratingMatch = html.match(/(\d+\.\d+)\s*<\/span>/);
-  const rating = ratingMatch ? ratingMatch[1] : null;
-
-  // Info blocks
-  const statusMatch = html.match(/Status.*?<\/b>\s*([^<]+)/i);
-  const episodeMatch = html.match(/Jumlah Episode.*?(\d+)/i) || html.match(/(\d+)\s*Episode/i);
-  const typeMatch = html.match(/Tipe.*?<\/b>\s*([^<]+)/i) || html.match(/Type.*?<\/b>\s*([^<]+)/i);
-  const studioMatch = html.match(/Studio.*?<\/b>\s*<a[^>]*>([^<]+)<\/a>/i);
-  const yearMatch = html.match(/(\d{4})/);
-
-  // Genres
-  const genreMatches = extractAll(html, /<a[^>]+href="[^"]*genre[^"]*"[^>]*>([^<]+)<\/a>/i);
-  const genres = genreMatches.map(m => m[1].trim()).filter(Boolean);
-
-  // Episodes
+// ── Anime Detail ─────────────────────────
+async function scrapeAnimeDetail(sl) {
+  const doc = parse(await fetchHTML(`${BASE_URL}/anime/${sl}/`));
+  const title = txt(doc.querySelector('h1.entry-title')) || txt(doc.querySelector('h1'));
+  const thumb = getSrc(doc.querySelector('.fotoanime img')) || attr(doc.querySelector('meta[property="og:image"]'),'content');
+  const synParas = doc.querySelectorAll('.sinopc p');
+  const synopsis = synParas.map(p => txt(p)).filter(Boolean).join(' ') || txt(doc.querySelector('.sinopc'));
+  const infoBolds = doc.querySelectorAll('.infozingle b');
+  const getInfo = idx => {
+    const b = infoBolds[idx];
+    return b ? b.parentNode.text.replace(b.text,'').replace(':','').trim() : null;
+  };
+  const genreEls = doc.querySelector('.infozingle')?.lastElementChild?.querySelectorAll('a') || [];
+  const genres = genreEls.map(x => txt(x)).filter(Boolean);
   const episodes = [];
-  const epBlocks = html.split('class="episodelist"');
-
-  if (epBlocks.length > 1) {
-    const epListHtml = epBlocks[1];
-    const epMatches = extractAll(epListHtml, /<a href="(https:\/\/otakudesu\.best\/episode\/[^"]+)"[^>]*>([^<]+)<\/a>/i);
-
-    epMatches.forEach((match, i) => {
-      const epUrl = match[1];
-      const epTitle = match[2].trim();
-      const epSlug = epUrl.replace(BASE_URL, '').replace(/^\/episode\//, '').replace(/\/$/, '');
-      const epNumMatch = epTitle.match(/(\d+)/);
-
-      episodes.push({
-        title: epTitle,
-        slug: epSlug,
-        url: epUrl,
-        episode: epNumMatch ? epNumMatch[1] : String(i + 1),
+  for (const block of doc.querySelectorAll('.smokelister')) {
+    const bt = block.text.toLowerCase();
+    if (bt.includes('episode') && !bt.includes('batch')) {
+      const epLinks = block.nextElementSibling?.querySelectorAll('li a') || [];
+      epLinks.forEach((link, i) => {
+        const epUrl = getHref(link);
+        const epTitle = txt(link);
+        const num = epTitle.match(/(\d+)/);
+        episodes.push({ title:epTitle, slug:toSlug(epUrl), url:epUrl, episode:num?num[1]:String(i+1) });
       });
-    });
-
-    // Balik urutan (biasanya terbalik di HTML)
-    episodes.reverse();
+      if (episodes.length > 0) break;
+    }
   }
-
+  episodes.reverse();
   return {
-    title,
-    thumb,
-    synopsis,
-    rating,
-    status: statusMatch ? stripTags(statusMatch[1]) : 'Unknown',
-    type: typeMatch ? stripTags(typeMatch[1]) : 'TV',
-    episode: episodeMatch ? episodeMatch[1] : episodes.length || '?',
-    studio: studioMatch ? studioMatch[1].trim() : null,
-    year: yearMatch ? yearMatch[1] : null,
-    genres,
-    episodes,
-    slug,
+    title, thumb, synopsis,
+    rating: getInfo(2), status: getInfo(5), type: getInfo(4),
+    episode: getInfo(6) || episodes.length || '?',
+    duration: getInfo(7), aired: getInfo(8), studio: getInfo(9),
+    genres, episodes, slug: sl
   };
 }
 
-// ── Scrape Episode (streaming links) ─────
+// ── Episode / Streaming ──────────────────
 async function scrapeEpisode(epSlug) {
   const url = `${BASE_URL}/episode/${epSlug}/`;
-  const html = await fetchHTML(url);
-
+  const doc = parse(await fetchHTML(url));
   const servers = [];
-
-  // Cari iframe embed
-  const iframeMatch = html.match(/<iframe[^>]+src="([^"]+)"[^>]*>/gi);
-  if (iframeMatch) {
-    iframeMatch.forEach((iframe, i) => {
-      const srcMatch = iframe.match(/src="([^"]+)"/);
-      if (srcMatch) {
-        servers.push({
-          name: `Server ${i + 1}`,
-          url: srcMatch[1],
-        });
-      }
+  const defaultIframe = doc.querySelector('.player-embed iframe') || doc.querySelector('iframe');
+  if (defaultIframe) { const iSrc = getSrc(defaultIframe); if(iSrc) servers.push({ name:'Default', url:iSrc }); }
+  doc.querySelectorAll('.mirrorstream > ul').forEach(ul => {
+    const quality = txt(ul.previousElementSibling) || 'HD';
+    ul.querySelectorAll('li a[data-content]').forEach(link => {
+      servers.push({ name:`${quality} - ${txt(link)}`, serverId:attr(link,'data-content'), referer:url, needsNonce:true });
     });
-  }
-
-  // Cari link streaming alternatif
-  const streamMatches = extractAll(html, /data-src="(https?:\/\/[^"]+)"/i);
-  streamMatches.forEach((m, i) => {
-    if (!servers.find(s => s.url === m[1])) {
-      servers.push({ name: `Mirror ${i + 1}`, url: m[1] });
-    }
   });
-
-  return { servers };
+  const navEls = doc.querySelectorAll('.flir a');
+  let prevEp = null, nextEp = null;
+  navEls.forEach(link => {
+    const t2 = txt(link).toLowerCase();
+    if (t2.includes('prev') || t2.includes('sebelum')) prevEp = { slug:toSlug(getHref(link)), url:getHref(link) };
+    else if (t2.includes('next') || t2.includes('selanjut')) nextEp = { slug:toSlug(getHref(link)), url:getHref(link) };
+  });
+  return { servers, prevEp, nextEp };
 }
 
-// ── Scrape Search ────────────────────────
-async function scrapeSearch(query) {
-  const url = `${BASE_URL}/?s=${encodeURIComponent(query)}`;
-  const html = await fetchHTML(url);
-  const results = [];
-
-  const blocks = html.split('<div class="');
-  blocks.forEach(block => {
-    const linkMatch = block.match(/href="(https:\/\/otakudesu\.best\/anime\/[^"]+)"/);
-    const imgMatch = block.match(/src="(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp)[^"]*)"/i);
-    const titleMatch = block.match(/<h2[^>]*>([^<]+)<\/h2>/) || block.match(/<span[^>]*>([^<]+)<\/span>/);
-
-    if (linkMatch && titleMatch) {
-      const url = linkMatch[1];
-      const slug = urlToSlug(url);
-      const title = stripTags(titleMatch[1]);
-
-      if (slug && title && !results.find(r => r.slug === slug)) {
-        results.push({
-          title,
-          slug,
-          url,
-          thumb: imgMatch ? imgMatch[1] : '',
-          status: 'Unknown',
-        });
-      }
-    }
+function fetchPost(postUrl, body, referer) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(postUrl);
+    const req = https.request({
+      hostname:u.hostname, path:u.pathname, method:'POST',
+      headers:{ 'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8', 'Content-Length':Buffer.byteLength(body), 'Referer':referer, 'Origin':BASE_URL, 'User-Agent':'Mozilla/5.0', 'X-Requested-With':'XMLHttpRequest' }
+    }, (res) => { let d=''; res.on('data',c=>d+=c); res.on('end',()=>resolve(d)); });
+    req.on('error',reject); req.write(body); req.end();
   });
-
-  return results.slice(0, 10);
 }
 
-// ═══════════════════════════════════════════
-// MAIN HANDLER
-// ═══════════════════════════════════════════
+async function getServerUrl(serverId, referer) {
+  try {
+    const decoded = JSON.parse(Buffer.from(serverId,'base64').toString());
+    const nonceBody = new URLSearchParams({ action: decoded.action2||'' });
+    const nonce = JSON.parse(await fetchPost(`${BASE_URL}/wp-admin/admin-ajax.php`, nonceBody.toString(), referer));
+    const serverBody = new URLSearchParams({ ...decoded, nonce:nonce.data||'' });
+    const serverData = JSON.parse(await fetchPost(`${BASE_URL}/wp-admin/admin-ajax.php`, serverBody.toString(), referer));
+    const iframeHtml = Buffer.from(serverData.data||'','base64').toString();
+    const m = iframeHtml.match(/src="([^"]+)"/);
+    return m ? m[1] : null;
+  } catch(e) { return null; }
+}
+
+// ── Main Handler ─────────────────────────
 module.exports = async (req, res) => {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
+  res.setHeader('Access-Control-Allow-Origin','*');
+  res.setHeader('Access-Control-Allow-Methods','GET, OPTIONS');
+  res.setHeader('Content-Type','application/json');
+  if (req.method === 'OPTIONS') return res.status(200).end();
   const url = req.url || '';
   const params = new URLSearchParams(url.split('?')[1] || '');
-
   try {
-    // GET /api/ongoing
-    if (url.startsWith('/api/ongoing')) {
-      const animes = await scrapeOngoing();
-      return res.status(200).json({ animes });
-    }
-
-    // GET /api/complete
-    if (url.startsWith('/api/complete')) {
-      const animes = await scrapeComplete();
-      return res.status(200).json({ animes });
-    }
-
-    // GET /api/anime?slug=...
-    if (url.startsWith('/api/anime')) {
-      const slug = params.get('slug');
-      if (!slug) return res.status(400).json({ error: 'slug diperlukan' });
-      const data = await scrapeAnimeDetail(slug);
-      return res.status(200).json(data);
-    }
-
-    // GET /api/episode?slug=...&ep=...
-    if (url.startsWith('/api/episode')) {
-      const slug = params.get('slug');
-      if (!slug) return res.status(400).json({ error: 'slug diperlukan' });
-      const data = await scrapeEpisode(slug);
-      return res.status(200).json(data);
-    }
-
-    // GET /api/search?q=...
+    if (url.startsWith('/api/ongoing')) return res.status(200).json({ animes: await scrapeOngoing(parseInt(params.get('page'))||1) });
+    if (url.startsWith('/api/complete')) return res.status(200).json({ animes: await scrapeComplete(parseInt(params.get('page'))||1) });
+    if (url.startsWith('/api/schedule')) return res.status(200).json({ schedules: await scrapeSchedule() });
     if (url.startsWith('/api/search')) {
       const q = params.get('q');
-      if (!q) return res.status(400).json({ error: 'query diperlukan' });
-      const results = await scrapeSearch(q);
-      return res.status(200).json({ results });
+      if (!q) return res.status(400).json({ error:'query diperlukan' });
+      return res.status(200).json({ results: await scrapeSearch(q) });
     }
-
-    return res.status(404).json({ error: 'Endpoint tidak ditemukan' });
-
-  } catch (err) {
-    console.error('Scraper error:', err.message);
-    return res.status(500).json({ error: 'Scraping gagal: ' + err.message });
+    if (url.startsWith('/api/anime')) {
+      const sl = params.get('slug');
+      if (!sl) return res.status(400).json({ error:'slug diperlukan' });
+      return res.status(200).json(await scrapeAnimeDetail(sl));
+    }
+    if (url.startsWith('/api/episode')) {
+      const sl = params.get('slug');
+      if (!sl) return res.status(400).json({ error:'slug diperlukan' });
+      return res.status(200).json(await scrapeEpisode(sl));
+    }
+    if (url.startsWith('/api/server')) {
+      const id = params.get('id'), ref = params.get('ref');
+      if (!id) return res.status(400).json({ error:'id diperlukan' });
+      return res.status(200).json({ url: await getServerUrl(id, ref||BASE_URL) });
+    }
+    return res.status(404).json({ error:'Endpoint tidak ditemukan' });
+  } catch(err) {
+    console.error('Error:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 };
