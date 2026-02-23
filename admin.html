@@ -5,27 +5,19 @@
   <title>Admin Panel — KitsuneID</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:#0d0d1a;--card:#13131f;--accent:#7c5cfc;--accent2:#5b3fd4;--text:#e8e8f0;--text2:#8888aa;--border:#2a2a3d;--danger:#ef4444;--success:#22c55e;--rl:14px}
+    :root{--bg:#0d0d1a;--card:#13131f;--accent:#7c5cfc;--accent2:#5b3fd4;--text:#e8e8f0;--text2:#8888aa;--border:#2a2a3d;--danger:#ef4444;--success:#22c55e;--warn:#f59e0b;--rl:14px}
     body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh}
-    
-    /* LOGIN */
     #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
     .login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;width:100%;max-width:360px;text-align:center}
     .login-logo{font-size:28px;font-weight:800;margin-bottom:8px;color:var(--accent)}
     .login-sub{font-size:13px;color:var(--text2);margin-bottom:28px}
-    
-    /* ADMIN */
     #adminScreen{display:none}
     .admin-nav{background:var(--card);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
     .admin-logo{font-weight:800;font-size:18px;color:var(--accent)}
     .admin-body{padding:20px;max-width:800px;margin:0 auto}
-    
-    /* TABS */
     .tabs{display:flex;gap:4px;background:var(--card);padding:4px;border-radius:var(--rl);margin-bottom:24px;border:1px solid var(--border)}
     .tab{flex:1;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--text2);border:none;background:none;transition:all .2s}
     .tab.active{background:var(--accent);color:#fff}
-    
-    /* FORM */
     .section-title{font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .form-full{grid-column:1/-1}
@@ -33,68 +25,61 @@
     input,textarea,select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
     input:focus,textarea:focus,select:focus{border-color:var(--accent)}
     textarea{resize:vertical;min-height:80px}
-    
-    /* EPISODE BUILDER */
     .ep-builder{border:1px solid var(--border);border-radius:var(--rl);padding:14px}
-    .ep-item{display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
+    .ep-item{display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;margin-bottom:8px}
     .ep-item input{margin:0}
     .btn-add-ep{width:100%;padding:8px;background:transparent;border:1px dashed var(--border);border-radius:10px;color:var(--text2);cursor:pointer;font-size:13px;margin-top:4px;transition:all .2s}
     .btn-add-ep:hover{border-color:var(--accent);color:var(--accent)}
-    
-    /* BUTTONS */
-    .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+    .btn{padding:11px 20px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
     .btn-primary{background:var(--accent);color:#fff}
     .btn-primary:hover{background:var(--accent2)}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed}
     .btn-danger{background:var(--danger);color:#fff;padding:6px 12px;font-size:12px}
-    .btn-sm{padding:6px 14px;font-size:12px}
+    .btn-sm{padding:8px 14px;font-size:12px}
     .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
     .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-    
-    /* ANIME LIST */
+    .btn-test{background:rgba(245,158,11,.15);border:1px solid var(--warn);color:var(--warn);padding:10px 16px;font-size:13px;font-weight:600;border-radius:10px;cursor:pointer;width:100%;margin-top:10px}
     .anime-list{display:flex;flex-direction:column;gap:10px}
     .anime-item{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:14px;display:flex;gap:12px;align-items:center}
     .anime-item img{width:44px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0}
     .anime-item-info{flex:1;min-width:0}
     .anime-item-title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .anime-item-meta{font-size:12px;color:var(--text2);margin-top:2px}
-    .anime-item-actions{display:flex;gap:6px;flex-shrink:0}
-    
-    /* SETUP */
-    .setup-box{background:var(--card);border:1px solid var(--accent);border-radius:var(--rl);padding:20px;margin-bottom:20px}
-    .setup-title{font-weight:700;color:var(--accent);margin-bottom:4px}
-    .setup-sub{font-size:12px;color:var(--text2);margin-bottom:14px}
-    
-    /* ALERTS */
-    .alert{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px}
-    .alert-success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--success)}
-    .alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
-    
-    .tag{display:inline-block;padding:3px 10px;background:rgba(124,92,252,.15);color:var(--accent);border-radius:20px;font-size:11px;margin:2px}
-    .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px}
+    .setup-box{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:20px;margin-bottom:16px}
+    .setup-title{font-weight:700;margin-bottom:4px}
+    .setup-sub{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6}
+    .alert{padding:12px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;line-height:1.5}
+    .alert-success{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--success)}
+    .alert-error{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+    .alert-warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--warn)}
     .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
     .badge-ongoing{background:rgba(34,197,94,.15);color:var(--success)}
     .badge-complete{background:rgba(124,92,252,.15);color:var(--accent)}
-    
+    .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px}
+    .conn-status{padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;margin-top:8px;display:none}
+    .conn-ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--success)}
+    .conn-fail{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--danger)}
+    code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px}
     @media(max-width:500px){.form-grid{grid-template-columns:1fr}.ep-item{grid-template-columns:60px 1fr auto}}
   </style>
 </head>
 <body>
 
-<!-- LOGIN SCREEN -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">🦊 KitsuneID</div>
-    <div class="login-sub">Admin Panel — Hanya untuk pengelola</div>
+    <div class="login-sub">Admin Panel</div>
     <div style="margin-bottom:14px">
       <label>Password Admin</label>
       <input type="password" id="pwInput" placeholder="Masukkan password..." onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-primary" style="width:100%" onclick="doLogin()">Masuk</button>
-    <div id="loginErr" style="color:#ef4444;font-size:12px;margin-top:10px;display:none">Password salah!</div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Masuk</button>
+    <div id="loginErr" style="color:var(--danger);font-size:12px;margin-top:10px;display:none">❌ Password salah!</div>
   </div>
 </div>
 
-<!-- ADMIN SCREEN -->
+<!-- ADMIN -->
 <div id="adminScreen">
   <nav class="admin-nav">
     <div class="admin-logo">🦊 Admin Panel</div>
@@ -106,18 +91,19 @@
   </nav>
 
   <div class="admin-body">
-    <!-- TABS -->
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('upload')">➕ Upload Anime</button>
-      <button class="tab" onclick="switchTab('list')">📋 Daftar Anime</button>
+      <button class="tab active" onclick="switchTab('upload')">➕ Upload</button>
+      <button class="tab" onclick="switchTab('list')">📋 Daftar</button>
       <button class="tab" onclick="switchTab('setup')">⚙️ Setup</button>
     </div>
 
-    <!-- ALERT -->
     <div id="alertBox" style="display:none"></div>
 
-    <!-- TAB: UPLOAD -->
+    <!-- TAB UPLOAD -->
     <div id="tab-upload">
+      <div id="connWarning" class="alert alert-warn" style="display:none">
+        ⚠️ Koneksi ke JSONBin belum diverifikasi. Buka tab <strong>⚙️ Setup</strong> dan klik <strong>Test Koneksi</strong> dulu.
+      </div>
       <div class="section-title">Upload Anime Baru</div>
       <div class="form-grid">
         <div class="form-full">
@@ -126,19 +112,11 @@
         </div>
         <div>
           <label>Status *</label>
-          <select id="f-status">
-            <option value="Ongoing">Ongoing</option>
-            <option value="Complete">Complete</option>
-          </select>
+          <select id="f-status"><option value="Ongoing">Ongoing</option><option value="Complete">Complete</option></select>
         </div>
         <div>
           <label>Tipe</label>
-          <select id="f-type">
-            <option value="TV">TV</option>
-            <option value="Movie">Movie</option>
-            <option value="OVA">OVA</option>
-            <option value="Special">Special</option>
-          </select>
+          <select id="f-type"><option value="TV">TV</option><option value="Movie">Movie</option><option value="OVA">OVA</option><option value="Special">Special</option></select>
         </div>
         <div>
           <label>Rating (0–10)</label>
@@ -171,186 +149,186 @@
           <label>Sinopsis</label>
           <textarea id="f-synopsis" placeholder="Tulis sinopsis anime..."></textarea>
         </div>
-        
-        <!-- EPISODE BUILDER -->
         <div class="form-full">
-          <label>Daftar Episode & URL Video</label>
+          <label>Daftar Episode + URL Video</label>
           <div class="ep-builder">
-            <div style="display:grid;grid-template-columns:80px 1fr;gap:8px;margin-bottom:6px">
-              <span style="font-size:11px;color:var(--text2);font-weight:600">EP #</span>
-              <span style="font-size:11px;color:var(--text2);font-weight:600">URL Embed Video (iframe src)</span>
+            <div style="display:grid;grid-template-columns:70px 1fr;gap:8px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+              <span style="font-size:11px;color:var(--text2);font-weight:700">EP #</span>
+              <span style="font-size:11px;color:var(--text2);font-weight:700">URL Embed Video</span>
             </div>
-            <div id="epList">
-              <!-- episode rows injected here -->
-            </div>
+            <div id="epList"></div>
             <button class="btn-add-ep" onclick="addEpRow()">+ Tambah Episode</button>
           </div>
-          <p style="font-size:11px;color:var(--text2);margin-top:6px">💡 URL embed bisa dari YouTube, Google Drive, atau server lain. Contoh: <code>https://www.youtube.com/embed/xxxxx</code></p>
+          <div style="margin-top:8px;padding:10px;background:var(--card);border-radius:8px;font-size:12px;color:var(--text2);line-height:1.7">
+            💡 <strong style="color:var(--text)">Format URL Video yang didukung:</strong><br>
+            • YouTube: <code>https://www.youtube.com/embed/VIDEO_ID</code><br>
+            • Google Drive: <code>https://drive.google.com/file/d/FILE_ID/preview</code><br>
+            • Langsung tempel URL embed dari sumber lain
+          </div>
         </div>
       </div>
-
-      <div style="display:flex;gap:10px;margin-top:20px">
-        <button class="btn btn-primary" onclick="submitAnime()">💾 Simpan Anime</button>
-        <button class="btn btn-outline" onclick="clearForm()">Reset Form</button>
+      <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+        <button class="btn btn-primary" id="saveBtn" onclick="submitAnime()">💾 Simpan Anime</button>
+        <button class="btn btn-outline" onclick="clearForm()">🗑 Reset Form</button>
       </div>
     </div>
 
-    <!-- TAB: LIST -->
+    <!-- TAB DAFTAR -->
     <div id="tab-list" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div class="section-title" style="margin:0">Anime yang Diupload</div>
+        <div class="section-title" style="margin:0;border:none">Anime yang Diupload</div>
         <button class="btn btn-outline btn-sm" onclick="loadAnimeList()">🔄 Refresh</button>
       </div>
-      <div id="animeListContainer">
-        <div class="empty">Loading...</div>
-      </div>
+      <div id="animeListContainer"><div class="empty">Buka tab ini untuk memuat data.</div></div>
     </div>
 
-    <!-- TAB: SETUP -->
+    <!-- TAB SETUP -->
     <div id="tab-setup" style="display:none">
+      <div class="setup-box" style="border-color:var(--accent)">
+        <div class="setup-title" style="color:var(--accent)">🔗 Koneksi JSONBin</div>
+        <div class="setup-sub">
+          Credentials sudah diisi otomatis. Klik <strong>Test Koneksi</strong> untuk memastikan JSONBin bisa diakses dari browser kamu.
+        </div>
+        <div id="connStatus" class="conn-status"></div>
+        <button class="btn-test" onclick="testConnection()">🔌 Test Koneksi JSONBin</button>
+      </div>
+
       <div class="setup-box">
-        <div class="setup-title">📦 Setup JSONBin.io</div>
-        <div class="setup-sub">Data anime upload disimpan di JSONBin (gratis). Daftar di jsonbin.io, buat bin baru, lalu isi info di bawah.</div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div>
-            <label>JSONBin API Key (dari Settings → API Keys)</label>
-            <input id="cfg-apikey" type="password" placeholder="$2a$10$...">
-          </div>
-          <div>
-            <label>Bin ID (dari URL setelah buat bin)</label>
-            <input id="cfg-binid" placeholder="64a1b2c3d4e5f6...">
-          </div>
-          <div>
-            <label>Password Admin</label>
-            <input id="cfg-password" type="password" placeholder="Ganti password admin">
-          </div>
-          <button class="btn btn-primary" onclick="saveConfig()">💾 Simpan Config</button>
+        <div class="setup-title">🔑 Ganti Password Admin</div>
+        <div class="setup-sub">Password default: <code>kitsune2024</code></div>
+        <div style="display:flex;gap:10px">
+          <input id="cfg-password" type="password" placeholder="Password baru..." style="flex:1">
+          <button class="btn btn-primary btn-sm" onclick="savePassword()">Simpan</button>
         </div>
       </div>
 
-      <div class="setup-box" style="border-color:var(--border)">
-        <div class="setup-title" style="color:var(--text)">📖 Cara Setup JSONBin</div>
-        <ol style="font-size:13px;color:var(--text2);line-height:1.8;padding-left:18px;margin-top:8px">
-          <li>Buka <strong style="color:var(--text)">jsonbin.io</strong> → Sign Up gratis</li>
-          <li>Klik <strong style="color:var(--text)">New Bin</strong> → isi JSON: <code style="background:var(--bg);padding:2px 6px;border-radius:4px">{"animes":[]}</code></li>
-          <li>Copy <strong style="color:var(--text)">Bin ID</strong> dari URL: <code style="background:var(--bg);padding:2px 6px;border-radius:4px">jsonbin.io/b/[BIN_ID]</code></li>
-          <li>Ke <strong style="color:var(--text)">Settings → API Keys</strong> → buat key baru</li>
-          <li>Isi keduanya di form atas → Simpan</li>
-        </ol>
-      </div>
-
-      <div class="setup-box" style="border-color:var(--border)">
-        <div class="setup-title" style="color:var(--text)">🛡️ Keamanan</div>
-        <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-top:6px">Password admin disimpan di browser. Jangan gunakan password yang sama dengan akun penting. Halaman admin bisa diakses di <code style="background:var(--bg);padding:2px 6px;border-radius:4px">admin.html</code> — sembunyikan dari publik jika perlu.</p>
+      <div class="setup-box">
+        <div class="setup-title">📖 Cara Pakai URL Google Drive</div>
+        <div class="setup-sub" style="margin:0">
+          1. Upload video ke Google Drive<br>
+          2. Klik kanan → <strong>Bagikan</strong> → ubah ke <strong>Siapa saja dengan link</strong><br>
+          3. Copy link, ambil bagian <code>FILE_ID</code> dari URL<br>
+          4. Paste di form episode dengan format:<br>
+          <code>https://drive.google.com/file/d/FILE_ID/preview</code>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-// ── CONFIG ──────────────────────────────────
-const DEFAULT_PASSWORD = 'kitsune2024';
+const ADMIN_PW_DEFAULT = 'kitsune2024';
 const RAILWAY_API = 'https://kitsuneid-api-production.up.railway.app';
-const DEFAULT_BIN_ID = '699c6ab843b1c97be996c684';
-const DEFAULT_API_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+const BIN_ID = '699c6ab843b1c97be996c684';
+const API_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
 
-function getCfg() {
-  const saved = JSON.parse(localStorage.getItem('kitsuneAdminCfg') || '{}');
-  return {
-    apiKey: saved.apiKey || DEFAULT_API_KEY,
-    binId: saved.binId || DEFAULT_BIN_ID,
-    password: saved.password || DEFAULT_PASSWORD,
-    ...saved
-  };
+// ── Auth ─────────────────────────────────────
+function getAdminPw() {
+  return localStorage.getItem('kitsune_admin_pw') || ADMIN_PW_DEFAULT;
 }
-function saveCfg(cfg) {
-  localStorage.setItem('kitsuneAdminCfg', JSON.stringify(cfg));
-}
-
-// ── LOGIN ────────────────────────────────────
 function doLogin() {
   const pw = document.getElementById('pwInput').value;
-  const cfg = getCfg();
-  const correctPw = cfg.password || DEFAULT_PASSWORD;
-  if (pw === correctPw) {
-    localStorage.setItem('kitsuneAdminAuth', '1');
+  if (pw === getAdminPw()) {
+    sessionStorage.setItem('kitsune_auth', '1');
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminScreen').style.display = 'block';
-    loadConfig();
     addEpRow();
-    checkApiSetup();
   } else {
     document.getElementById('loginErr').style.display = 'block';
   }
 }
-
 function doLogout() {
-  localStorage.removeItem('kitsuneAdminAuth');
+  sessionStorage.removeItem('kitsune_auth');
   location.reload();
 }
 
-// ── TABS ─────────────────────────────────────
+// ── Tabs ─────────────────────────────────────
 function switchTab(name) {
   ['upload','list','setup'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
   });
-  document.querySelectorAll('.tab').forEach((btn, i) => {
-    btn.classList.toggle('active', ['upload','list','setup'][i] === name);
-  });
+  document.querySelectorAll('.tab').forEach((b, i) =>
+    b.classList.toggle('active', ['upload','list','setup'][i] === name));
   if (name === 'list') loadAnimeList();
 }
 
-// ── JSONBIN API ───────────────────────────────
-async function jsonbinGet() {
-  const cfg = getCfg();
-  if (!cfg.binId || !cfg.apiKey) return null;
-  const r = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`, {
-    headers: { 'X-Master-Key': cfg.apiKey }
+// ── JSONBin API ───────────────────────────────
+async function jbGet() {
+  const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+    headers: { 'X-Master-Key': API_KEY, 'X-Bin-Meta': 'false' }
   });
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`JSONBin error ${r.status}: ${txt.slice(0, 100)}`);
+  }
   const d = await r.json();
   return d.record || { animes: [] };
 }
 
-async function jsonbinSet(data) {
-  const cfg = getCfg();
-  if (!cfg.binId || !cfg.apiKey) throw new Error('Config belum diisi!');
-  const r = await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`, {
+async function jbSet(data) {
+  const r = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': cfg.apiKey },
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Master-Key': API_KEY
+    },
     body: JSON.stringify(data)
   });
-  return r.ok;
+  if (!r.ok) {
+    const txt = await r.text();
+    throw new Error(`JSONBin save error ${r.status}: ${txt.slice(0, 100)}`);
+  }
+  return true;
 }
 
-// ── FORM ─────────────────────────────────────
-let epCount = 0;
+// ── Test Koneksi ──────────────────────────────
+async function testConnection() {
+  const btn = document.querySelector('.btn-test');
+  const status = document.getElementById('connStatus');
+  btn.textContent = '⏳ Mengecek...';
+  btn.disabled = true;
+  status.style.display = 'none';
+  try {
+    const data = await jbGet();
+    const count = data.animes?.length || 0;
+    status.className = 'conn-status conn-ok';
+    status.textContent = `✅ Koneksi berhasil! Bin berisi ${count} anime.`;
+    status.style.display = 'block';
+    // Sembunyikan warning di tab upload
+    document.getElementById('connWarning').style.display = 'none';
+    localStorage.setItem('kitsune_conn_ok', '1');
+  } catch(e) {
+    status.className = 'conn-status conn-fail';
+    status.textContent = `❌ Gagal: ${e.message}`;
+    status.style.display = 'block';
+  }
+  btn.textContent = '🔌 Test Koneksi JSONBin';
+  btn.disabled = false;
+}
 
+// ── Form Episode ──────────────────────────────
+let epCount = 0;
 function addEpRow(num = '', url = '') {
   epCount++;
+  const n = epCount;
   const row = document.createElement('div');
   row.className = 'ep-item';
-  row.id = `eprow-${epCount}`;
+  row.id = `eprow-${n}`;
   row.innerHTML = `
-    <input type="number" placeholder="Ep" value="${num}" class="ep-num-input" min="1">
-    <input type="url" placeholder="https://... (URL embed video)" value="${url}" class="ep-url-input">
-    <button class="btn btn-danger" onclick="removeEpRow('eprow-${epCount}')">✕</button>
+    <input type="number" placeholder="Ep" value="${num}" class="ep-num-in" min="1">
+    <input type="url" placeholder="https://drive.google.com/file/d/.../preview" value="${url}" class="ep-url-in">
+    <button style="background:var(--danger);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px" onclick="document.getElementById('eprow-${n}').remove()">✕</button>
   `;
   document.getElementById('epList').appendChild(row);
 }
 
-function removeEpRow(id) {
-  document.getElementById(id)?.remove();
-}
-
 function getEpisodes() {
-  const rows = document.querySelectorAll('.ep-item');
-  const eps = [];
-  rows.forEach((row, i) => {
-    const num = row.querySelector('.ep-num-input')?.value || String(i + 1);
-    const url = row.querySelector('.ep-url-input')?.value || '';
-    if (url) eps.push({ episode: num, url, slug: `custom-ep-${num}`, title: `Episode ${num}` });
-  });
-  return eps;
+  return [...document.querySelectorAll('.ep-item')].map((row, i) => {
+    const num = row.querySelector('.ep-num-in')?.value || String(i + 1);
+    const url = row.querySelector('.ep-url-in')?.value?.trim() || '';
+    if (!url) return null;
+    return { episode: num, url, slug: `custom-ep-${num}`, title: `Episode ${num}` };
+  }).filter(Boolean);
 }
 
 function previewThumb() {
@@ -362,33 +340,36 @@ function previewThumb() {
 }
 
 function clearForm() {
-  ['f-title','f-thumb','f-synopsis','f-studio','f-aired','f-duration','f-genres','f-rating'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
+  ['f-title','f-thumb','f-synopsis','f-studio','f-aired','f-duration','f-genres','f-rating']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('epList').innerHTML = '';
   epCount = 0;
   addEpRow();
   document.getElementById('thumbPreviewBox').style.display = 'none';
+  document.getElementById('alertBox').style.display = 'none';
 }
 
+// ── Submit Anime ─────────────────────────────
 async function submitAnime() {
   const title = document.getElementById('f-title').value.trim();
   const thumb = document.getElementById('f-thumb').value.trim();
-  if (!title || !thumb) { showAlert('Judul dan Cover wajib diisi!', 'error'); return; }
 
-  const cfg = getCfg();
-  if (!cfg.binId || !cfg.apiKey) { showAlert('Setup JSONBin dulu di tab ⚙️ Setup!', 'error'); return; }
+  if (!title) { showAlert('❌ Judul wajib diisi!', 'error'); return; }
+  if (!thumb) { showAlert('❌ URL Cover wajib diisi!', 'error'); return; }
+
+  const episodes = getEpisodes();
+  if (!episodes.length) { showAlert('❌ Tambahkan minimal 1 episode dengan URL video!', 'error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '⏳ Menyimpan...';
+  btn.disabled = true;
 
   const genres = document.getElementById('f-genres').value.split(',').map(g => g.trim()).filter(Boolean);
-  const episodes = getEpisodes();
   const slug = 'custom-' + title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-');
 
   const anime = {
     id: Date.now(),
-    title,
-    slug,
-    thumb,
+    title, slug, thumb,
     synopsis: document.getElementById('f-synopsis').value.trim() || 'Tidak ada sinopsis.',
     status: document.getElementById('f-status').value,
     type: document.getElementById('f-type').value,
@@ -396,123 +377,107 @@ async function submitAnime() {
     studio: document.getElementById('f-studio').value.trim() || null,
     aired: document.getElementById('f-aired').value.trim() || null,
     duration: document.getElementById('f-duration').value.trim() || null,
-    genres,
-    episodes,
-    episode: String(episodes.length) || '?',
+    genres, episodes,
+    episode: String(episodes.length),
     isCustom: true,
     uploadedAt: new Date().toISOString()
   };
 
   try {
-    const data = await jsonbinGet() || { animes: [] };
+    const data = await jbGet();
     data.animes.push(anime);
-    const ok = await jsonbinSet(data);
-    if (ok) {
-      showAlert(`✅ "${title}" berhasil disimpan!`, 'success');
-      clearForm();
-    } else {
-      showAlert('Gagal menyimpan. Cek API key & Bin ID.', 'error');
-    }
+    await jbSet(data);
+    showAlert(`✅ "${title}" berhasil disimpan! (${episodes.length} episode)`, 'success');
+    clearForm();
   } catch(e) {
-    showAlert('Error: ' + e.message, 'error');
+    showAlert(`❌ Gagal menyimpan: ${e.message}`, 'error');
   }
+
+  btn.textContent = '💾 Simpan Anime';
+  btn.disabled = false;
 }
 
-// ── LIST ─────────────────────────────────────
+// ── Daftar Anime ──────────────────────────────
 async function loadAnimeList() {
-  const container = document.getElementById('animeListContainer');
-  container.innerHTML = '<div class="empty">Memuat...</div>';
+  const c = document.getElementById('animeListContainer');
+  c.innerHTML = '<div class="empty">⏳ Memuat...</div>';
   try {
-    const data = await jsonbinGet();
-    if (!data) { container.innerHTML = '<div class="empty">Setup JSONBin dulu di tab ⚙️</div>'; return; }
+    const data = await jbGet();
     const animes = data.animes || [];
-    if (!animes.length) { container.innerHTML = '<div class="empty">Belum ada anime yang diupload.</div>'; return; }
-    container.innerHTML = `<div class="anime-list">${animes.map((a, i) => `
+    if (!animes.length) {
+      c.innerHTML = '<div class="empty">Belum ada anime yang diupload.</div>';
+      return;
+    }
+    c.innerHTML = `<div class="anime-list">${animes.map(a => `
       <div class="anime-item">
         <img src="${a.thumb}" onerror="this.src='https://placehold.co/44x60/13131f/7c5cfc?text=?'">
         <div class="anime-item-info">
           <div class="anime-item-title">${a.title}</div>
           <div class="anime-item-meta">
-            <span class="badge ${a.status === 'Ongoing' ? 'badge-ongoing' : 'badge-complete'}">${a.status}</span>
-            · ${a.episodes?.length || 0} episode
-            ${a.genres?.length ? '· ' + a.genres.slice(0,2).map(g => `<span class="tag">${g}</span>`).join('') : ''}
+            <span class="badge ${a.status==='Ongoing'?'badge-ongoing':'badge-complete'}">${a.status}</span>
+            · ${a.episodes?.length||0} ep
+            ${a.rating ? `· ★ ${a.rating}` : ''}
           </div>
         </div>
-        <div class="anime-item-actions">
-          <button class="btn btn-danger btn-sm" onclick="deleteAnime(${a.id})">🗑️</button>
-        </div>
+        <button style="background:var(--danger);border:none;color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;flex-shrink:0" onclick="deleteAnime(${a.id})">🗑️</button>
       </div>
     `).join('')}</div>`;
   } catch(e) {
-    container.innerHTML = `<div class="empty" style="color:var(--danger)">Error: ${e.message}</div>`;
+    c.innerHTML = `<div class="empty" style="color:var(--danger)">❌ ${e.message}<br><br>Coba klik <strong>Test Koneksi</strong> di tab ⚙️ Setup.</div>`;
   }
 }
 
 async function deleteAnime(id) {
   if (!confirm('Hapus anime ini?')) return;
   try {
-    const data = await jsonbinGet();
+    const data = await jbGet();
     data.animes = data.animes.filter(a => a.id !== id);
-    await jsonbinSet(data);
-    showAlert('Anime dihapus.', 'success');
+    await jbSet(data);
+    showAlert('✅ Anime dihapus.', 'success');
     loadAnimeList();
   } catch(e) {
-    showAlert('Gagal hapus: ' + e.message, 'error');
+    showAlert('❌ Gagal hapus: ' + e.message, 'error');
   }
 }
 
-// ── SETUP ─────────────────────────────────────
-function loadConfig() {
-  const cfg = getCfg();
-  if (cfg.apiKey) document.getElementById('cfg-apikey').value = cfg.apiKey;
-  if (cfg.binId) document.getElementById('cfg-binid').value = cfg.binId;
-}
-
-function saveConfig() {
-  const apiKey = document.getElementById('cfg-apikey').value.trim();
-  const binId = document.getElementById('cfg-binid').value.trim();
+// ── Setup ─────────────────────────────────────
+function savePassword() {
   const pw = document.getElementById('cfg-password').value.trim();
-  const cfg = getCfg();
-  if (apiKey) cfg.apiKey = apiKey;
-  if (binId) cfg.binId = binId;
-  if (pw) cfg.password = pw;
-  saveCfg(cfg);
-  showAlert('✅ Config tersimpan!', 'success');
+  if (!pw || pw.length < 4) { showAlert('❌ Password minimal 4 karakter!', 'error'); return; }
+  localStorage.setItem('kitsune_admin_pw', pw);
+  showAlert('✅ Password berhasil diubah!', 'success');
+  document.getElementById('cfg-password').value = '';
 }
 
-function checkApiSetup() {
-  const cfg = getCfg();
-  if (!cfg.binId || !cfg.apiKey) {
-    showAlert('⚠️ Setup JSONBin dulu di tab ⚙️ Setup agar fitur upload berfungsi!', 'error');
-  }
-}
-
-// ── CACHE ─────────────────────────────────────
+// ── Cache ─────────────────────────────────────
 async function clearCache() {
   try {
     const r = await fetch(`${RAILWAY_API}/cache/clear`);
     const d = await r.json();
-    document.getElementById('cacheStatus').textContent = d.message;
-    setTimeout(() => document.getElementById('cacheStatus').textContent = '', 3000);
+    const el = document.getElementById('cacheStatus');
+    el.textContent = d.message;
+    setTimeout(() => el.textContent = '', 3000);
   } catch(e) {}
 }
 
-// ── UTILS ─────────────────────────────────────
+// ── Alert ─────────────────────────────────────
 function showAlert(msg, type) {
   const box = document.getElementById('alertBox');
   box.className = `alert alert-${type}`;
   box.textContent = msg;
   box.style.display = 'block';
-  setTimeout(() => box.style.display = 'none', 4000);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => box.style.display = 'none', 6000);
 }
 
-// ── INIT ──────────────────────────────────────
-if (localStorage.getItem('kitsuneAdminAuth') === '1') {
+// ── Init ──────────────────────────────────────
+if (sessionStorage.getItem('kitsune_auth') === '1') {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('adminScreen').style.display = 'block';
-  loadConfig();
   addEpRow();
-  checkApiSetup();
+  if (!localStorage.getItem('kitsune_conn_ok')) {
+    document.getElementById('connWarning').style.display = 'block';
+  }
 }
 </script>
 </body>
