@@ -32,7 +32,7 @@ const todayIdx = new Date().getDay();
 let allSchedules = [];
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    const r = await fetch('/api/schedule');
+    const r = await fetch('https://kitsuneid-api-production.up.railway.app/schedule');
     const d = await r.json();
     allSchedules = d.schedules || [];
     renderTabs(); showDay(todayIdx);
