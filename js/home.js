@@ -1,21 +1,24 @@
 // ===== home.js — KitsuneID =====
 const API = 'https://kitsuneid-api-production.up.railway.app';
-const JSONBIN_ID = '699c6ab843b1c97be996c684';
-const JSONBIN_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+function getJbKey() { return localStorage.getItem('jb_api_key') || ''; }
+function getJbBin() { return localStorage.getItem('jb_bin_id') || '699c6ab843b1c97be996c684'; }
 
 let heroList = [], heroIdx = 0, heroTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   loadOngoing();
   loadComplete();
+  loadScheduleHome();
   initSearch();
 });
 
-// ── Ambil anime custom dari JSONBin ──────────
+// ── Custom animes dari JSONBin ────────────────
 async function loadCustomAnimes() {
   try {
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+    const key = getJbKey();
+    if (!key) return [];
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${getJbBin()}/latest`, {
+      headers: { 'X-Master-Key': key }
     });
     const d = await r.json();
     const record = d.record ?? d;
@@ -26,50 +29,63 @@ async function loadCustomAnimes() {
 // ── Ongoing ──────────────────────────────────
 async function loadOngoing() {
   try {
-    const [r, customs] = await Promise.all([
-      fetch(`${API}/ongoing`),
-      loadCustomAnimes()
-    ]);
+    const [r, customs] = await Promise.all([fetch(`${API}/ongoing`), loadCustomAnimes()]);
     const d = await r.json();
-
-    // Gabungkan: custom anime ongoing + scrape ongoing
     const customOngoing = customs.filter(a => a.status === 'Ongoing');
     const allAnimes = [...customOngoing, ...(d.animes || [])];
-
     if (!allAnimes.length) {
-      document.getElementById('ongoingGrid').innerHTML =
-        '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
+      document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
       return;
     }
-
     heroList = allAnimes.slice(0, 6);
     renderHero(0); renderDots();
     heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
-    document.getElementById('ongoingGrid').innerHTML =
-      allAnimes.slice(0, 12).map(a => makeCard(a, true)).join('');
-    loadSchedule(d.animes || []);
+    document.getElementById('ongoingGrid').innerHTML = allAnimes.slice(0, 12).map(a => makeCard(a, true)).join('');
   } catch(e) {
-    document.getElementById('ongoingGrid').innerHTML =
-      '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
+    document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
   }
 }
 
 // ── Complete ─────────────────────────────────
 async function loadComplete() {
   try {
-    const [r, customs] = await Promise.all([
-      fetch(`${API}/complete`),
-      loadCustomAnimes()
-    ]);
+    const [r, customs] = await Promise.all([fetch(`${API}/complete`), loadCustomAnimes()]);
     const d = await r.json();
-
     const customComplete = customs.filter(a => a.status === 'Complete');
     const allAnimes = [...customComplete, ...(d.animes || [])];
-
     if (!allAnimes.length) return;
-    document.getElementById('completeGrid').innerHTML =
-      allAnimes.slice(0, 12).map(a => makeCard(a)).join('');
+    document.getElementById('completeGrid').innerHTML = allAnimes.slice(0, 12).map(a => makeCard(a)).join('');
   } catch(e) {}
+}
+
+// ── Jadwal Hari Ini (fix: pakai Railway + fix nama hari) ──
+async function loadScheduleHome() {
+  const el = document.getElementById('scheduleGrid');
+  if (!el) return;
+  try {
+    const r = await fetch(`${API}/schedule`);
+    const d = await r.json();
+    const schedules = d.schedules || [];
+
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const todayName = days[new Date().getDay()];
+
+    // Cari jadwal hari ini — coba berbagai format nama hari
+    const todaySchedule = schedules.find(s => {
+      const dayLower = (s.day || '').toLowerCase();
+      return dayLower.includes(todayName.toLowerCase()) ||
+             dayLower.startsWith(todayName.slice(0, 3).toLowerCase());
+    });
+
+    const list = todaySchedule?.animeList || [];
+    if (!list.length) {
+      el.innerHTML = `<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada anime hari ${todayName}.</p>`;
+      return;
+    }
+    el.innerHTML = list.slice(0, 6).map(a => makeOC(a)).join('');
+  } catch(e) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat jadwal.</p>';
+  }
 }
 
 // ── Hero ─────────────────────────────────────
@@ -108,42 +124,61 @@ window.selectHero = function(i) {
   heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
 };
 
-function loadSchedule(animes) {
-  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-  const today = days[new Date().getDay()];
-  const todayList = animes.filter(a => a.day && a.day.includes(today));
-  const el = document.getElementById('scheduleGrid');
-  if (!todayList.length) {
-    el.innerHTML = `<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada anime hari ${today}.</p>`;
-    return;
-  }
-  el.innerHTML = todayList.slice(0, 6).map(a => makeOC(a)).join('');
+// ── Search (fix: kolom tidak hilang saat dipakai) ──
+let searchOpen = false;
+let searchTimer = null;
+
+function initSearch() {
+  const inputs = ['searchInput', 'mSearchInput'].map(id => document.getElementById(id)).filter(Boolean);
+
+  inputs.forEach(inp => {
+    // Buka overlay saat fokus
+    inp.addEventListener('focus', () => {
+      searchOpen = true;
+      const q = inp.value.trim();
+      if (q.length >= 2) doSearch(q);
+      else showSearchOv();
+    });
+
+    inp.addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      const q = e.target.value.trim();
+      if (q.length < 2) { clearSearchOv(); return; }
+      searchTimer = setTimeout(() => doSearch(q), 400);
+    });
+
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeSearch();
+    });
+  });
+
+  // Tutup HANYA kalau klik di luar search area DAN overlay
+  document.addEventListener('click', e => {
+    const inSearch = e.target.closest('.nav-search') || e.target.closest('.m-search');
+    const inOv = e.target.closest('#searchOv');
+    if (!inSearch && !inOv) closeSearch();
+  });
+
+  // Cegah overlay hilang saat di-tap
+  document.getElementById('searchOv')?.addEventListener('mousedown', e => e.preventDefault());
 }
 
-// ── Search ───────────────────────────────────
-function initSearch() {
-  const inputs = ['searchInput','mSearchInput'].map(id => document.getElementById(id)).filter(Boolean);
-  let timer;
-  inputs.forEach(inp => {
-    inp.addEventListener('input', e => {
-      clearTimeout(timer);
-      const q = e.target.value.trim();
-      if (q.length < 2) { closeSearch(); return; }
-      timer = setTimeout(() => doSearch(q), 400);
-    });
-    inp.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
-  });
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.nav-search') && !e.target.closest('.m-search')) closeSearch();
-  });
+function showSearchOv() {
+  const ov = document.getElementById('searchOv');
+  ov.classList.add('show');
+  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Ketik untuk mencari anime...</p>';
+}
+
+function clearSearchOv() {
+  const ov = document.getElementById('searchOv');
+  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Ketik lebih dari 1 karakter...</p>';
 }
 
 async function doSearch(q) {
   const ov = document.getElementById('searchOv');
   ov.classList.add('show');
-  ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Mencari...</p>';
+  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">🔍 Mencari...</p>';
   try {
-    // Cari di Railway + custom bersamaan
     const [r, customs] = await Promise.all([
       fetch(`${API}/search?q=${encodeURIComponent(q)}`),
       loadCustomAnimes()
@@ -152,13 +187,12 @@ async function doSearch(q) {
     const ql = q.toLowerCase();
     const customResults = customs.filter(a => a.title?.toLowerCase().includes(ql));
     const allResults = [...customResults, ...(d.results || [])];
-
     if (!allResults.length) {
-      ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Tidak ditemukan.</p>';
+      ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Anime tidak ditemukan.</p>';
       return;
     }
     ov.innerHTML = allResults.slice(0, 8).map(a => `
-      <a href="anime.html?slug=${encodeURIComponent(a.slug || '')}" class="sr-item" onclick="closeSearch()">
+      <a href="anime.html?slug=${encodeURIComponent(a.slug || '')}" class="sr-item">
         <img src="${a.thumb}" class="sr-thumb"
           onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
         <div>
@@ -167,8 +201,11 @@ async function doSearch(q) {
         </div>
       </a>`).join('');
   } catch(e) {
-    ov.innerHTML = '<p style="color:var(--muted);font-size:13px">Gagal mencari.</p>';
+    ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Gagal mencari.</p>';
   }
 }
 
-function closeSearch() { document.getElementById('searchOv')?.classList.remove('show'); }
+function closeSearch() {
+  searchOpen = false;
+  document.getElementById('searchOv')?.classList.remove('show');
+}
