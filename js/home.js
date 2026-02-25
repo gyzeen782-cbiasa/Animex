@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
 });
 
-// ── Custom animes dari JSONBin ────────────────
 async function loadCustomAnimes() {
   try {
     const key = getJbKey();
@@ -26,39 +25,30 @@ async function loadCustomAnimes() {
   } catch(e) { return []; }
 }
 
-// ── Ongoing ──────────────────────────────────
 async function loadOngoing() {
   try {
     const [r, customs] = await Promise.all([fetch(`${API}/ongoing`), loadCustomAnimes()]);
     const d = await r.json();
-    const customOngoing = customs.filter(a => a.status === 'Ongoing');
-    const allAnimes = [...customOngoing, ...(d.animes || [])];
-    if (!allAnimes.length) {
-      document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada data.</p>';
-      return;
-    }
+    const allAnimes = [...customs.filter(a=>a.status==='Ongoing'), ...(d.animes||[])];
+    if (!allAnimes.length) return;
     heroList = allAnimes.slice(0, 6);
     renderHero(0); renderDots();
-    heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
-    document.getElementById('ongoingGrid').innerHTML = allAnimes.slice(0, 12).map(a => makeCard(a, true)).join('');
+    heroTimer = setInterval(() => renderHero((heroIdx+1)%heroList.length), 5000);
+    document.getElementById('ongoingGrid').innerHTML = allAnimes.slice(0,12).map(a=>makeCard(a,true)).join('');
   } catch(e) {
-    document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat. Coba refresh.</p>';
+    document.getElementById('ongoingGrid').innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat.</p>';
   }
 }
 
-// ── Complete ─────────────────────────────────
 async function loadComplete() {
   try {
     const [r, customs] = await Promise.all([fetch(`${API}/complete`), loadCustomAnimes()]);
     const d = await r.json();
-    const customComplete = customs.filter(a => a.status === 'Complete');
-    const allAnimes = [...customComplete, ...(d.animes || [])];
-    if (!allAnimes.length) return;
-    document.getElementById('completeGrid').innerHTML = allAnimes.slice(0, 12).map(a => makeCard(a)).join('');
+    const allAnimes = [...customs.filter(a=>a.status==='Complete'), ...(d.animes||[])];
+    document.getElementById('completeGrid').innerHTML = allAnimes.slice(0,12).map(a=>makeCard(a)).join('');
   } catch(e) {}
 }
 
-// ── Jadwal Hari Ini (fix: pakai Railway + fix nama hari) ──
 async function loadScheduleHome() {
   const el = document.getElementById('scheduleGrid');
   if (!el) return;
@@ -66,29 +56,25 @@ async function loadScheduleHome() {
     const r = await fetch(`${API}/schedule`);
     const d = await r.json();
     const schedules = d.schedules || [];
-
     const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
     const todayName = days[new Date().getDay()];
-
-    // Cari jadwal hari ini — coba berbagai format nama hari
     const todaySchedule = schedules.find(s => {
-      const dayLower = (s.day || '').toLowerCase();
+      const dayLower = (s.day||'').toLowerCase();
       return dayLower.includes(todayName.toLowerCase()) ||
-             dayLower.startsWith(todayName.slice(0, 3).toLowerCase());
+             dayLower.startsWith(todayName.slice(0,3).toLowerCase());
     });
-
     const list = todaySchedule?.animeList || [];
     if (!list.length) {
       el.innerHTML = `<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Tidak ada anime hari ${todayName}.</p>`;
       return;
     }
-    el.innerHTML = list.slice(0, 6).map(a => makeOC(a)).join('');
+    el.innerHTML = list.slice(0,6).map(a => makeOC(a)).join('');
   } catch(e) {
     el.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">Gagal memuat jadwal.</p>';
   }
 }
 
-// ── Hero ─────────────────────────────────────
+// ── Hero ──────────────────────────────────────
 function renderHero(idx) {
   if (!heroList[idx]) return;
   heroIdx = idx;
@@ -97,81 +83,92 @@ function renderHero(idx) {
   body.style.cssText = 'opacity:0;transform:translateY(8px);transition:none';
   setTimeout(() => {
     document.getElementById('heroBg').style.backgroundImage = `url('${a.thumb}')`;
-    document.getElementById('heroTitle').textContent = a.title || '';
-    document.getElementById('heroDesc').textContent = a.synopsis || 'Tidak ada sinopsis.';
+    document.getElementById('heroTitle').textContent = a.title||'';
+    document.getElementById('heroDesc').textContent = a.synopsis||'Tidak ada sinopsis.';
     document.getElementById('heroMeta').innerHTML = `
-      ${a.rating ? `<span class="hero-mi" style="color:#fbbf24">★ <span style="color:var(--text2)">${a.rating}</span></span>` : ''}
-      ${a.episode ? `<span class="hero-mi">Ep ${a.episode}</span>` : ''}
-      ${a.type ? `<span style="background:var(--accent-s);padding:2px 8px;border-radius:20px;font-size:10px;color:var(--accent)">${a.type}</span>` : ''}
-    `;
-    const sl = encodeURIComponent(a.slug || '');
+      ${a.rating?`<span class="hero-mi" style="color:#fbbf24">★ <span style="color:var(--text2)">${a.rating}</span></span>`:''}
+      ${a.episode?`<span class="hero-mi">Ep ${a.episode}</span>`:''}
+      ${a.type?`<span style="background:var(--accent-s);padding:2px 8px;border-radius:20px;font-size:10px;color:var(--accent)">${a.type}</span>`:''}`;
+    const sl = encodeURIComponent(a.slug||'');
     document.getElementById('heroWatch').href = `watch.html?slug=${sl}&ep=1`;
     document.getElementById('heroDetail').href = `anime.html?slug=${sl}`;
     body.style.cssText = 'opacity:1;transform:translateY(0);transition:opacity .4s,transform .4s';
-    document.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+    document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
   }, 180);
 }
 
 function renderDots() {
-  document.getElementById('heroDots').innerHTML = heroList.map((_, i) =>
-    `<div class="hero-dot${i === 0 ? ' active' : ''}" onclick="selectHero(${i})"></div>`
-  ).join('');
+  document.getElementById('heroDots').innerHTML = heroList.map((_,i) =>
+    `<div class="hero-dot${i===0?' active':''}" onclick="selectHero(${i})"></div>`).join('');
 }
-
 window.selectHero = function(i) {
   clearInterval(heroTimer);
   renderHero(i);
-  heroTimer = setInterval(() => renderHero((heroIdx + 1) % heroList.length), 5000);
+  heroTimer = setInterval(() => renderHero((heroIdx+1)%heroList.length), 5000);
 };
 
-// ── Search (fix: kolom tidak hilang saat dipakai) ──
-let searchOpen = false;
+// ── Search (Fix No.2 — kolom tidak hilang) ────
 let searchTimer = null;
+let isSearchFocused = false;
 
 function initSearch() {
-  const inputs = ['searchInput', 'mSearchInput'].map(id => document.getElementById(id)).filter(Boolean);
+  const ovEl = document.getElementById('searchOv');
+  const inputs = ['searchInput','mSearchInput'].map(id=>document.getElementById(id)).filter(Boolean);
 
   inputs.forEach(inp => {
-    // Buka overlay saat fokus
     inp.addEventListener('focus', () => {
-      searchOpen = true;
+      isSearchFocused = true;
+      ovEl?.classList.add('show');
       const q = inp.value.trim();
       if (q.length >= 2) doSearch(q);
-      else showSearchOv();
+      else showSearchHint();
+    });
+
+    inp.addEventListener('blur', () => {
+      // Tunda close supaya klik hasil sempat diproses
+      setTimeout(() => {
+        if (!isSearchFocused) closeSearch();
+      }, 200);
     });
 
     inp.addEventListener('input', e => {
       clearTimeout(searchTimer);
       const q = e.target.value.trim();
-      if (q.length < 2) { clearSearchOv(); return; }
+      if (!q) { showSearchHint(); return; }
+      if (q.length < 2) return;
       searchTimer = setTimeout(() => doSearch(q), 400);
     });
 
+    // FIX: Enter tidak menutup search
     inp.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeSearch();
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = inp.value.trim();
+        if (q.length >= 2) doSearch(q);
+      }
+      if (e.key === 'Escape') {
+        isSearchFocused = false;
+        closeSearch();
+        inp.blur();
+      }
     });
   });
 
-  // Tutup HANYA kalau klik di luar search area DAN overlay
-  document.addEventListener('click', e => {
-    const inSearch = e.target.closest('.nav-search') || e.target.closest('.m-search');
-    const inOv = e.target.closest('#searchOv');
-    if (!inSearch && !inOv) closeSearch();
-  });
+  // Overlay: tap hasil → jangan tutup dulu
+  ovEl?.addEventListener('mousedown', () => { isSearchFocused = true; });
+  ovEl?.addEventListener('touchstart', () => { isSearchFocused = true; });
 
-  // Cegah overlay hilang saat di-tap
-  document.getElementById('searchOv')?.addEventListener('mousedown', e => e.preventDefault());
+  // Tutup hanya jika klik di luar area search DAN overlay
+  document.addEventListener('click', e => {
+    const inSearch = e.target.closest('.nav-search,.m-search,#searchOv');
+    if (!inSearch) { isSearchFocused = false; closeSearch(); }
+  });
 }
 
-function showSearchOv() {
+function showSearchHint() {
   const ov = document.getElementById('searchOv');
   ov.classList.add('show');
-  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Ketik untuk mencari anime...</p>';
-}
-
-function clearSearchOv() {
-  const ov = document.getElementById('searchOv');
-  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Ketik lebih dari 1 karakter...</p>';
+  ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Ketik judul anime yang ingin dicari...</p>';
 }
 
 async function doSearch(q) {
@@ -185,19 +182,20 @@ async function doSearch(q) {
     ]);
     const d = await r.json();
     const ql = q.toLowerCase();
-    const customResults = customs.filter(a => a.title?.toLowerCase().includes(ql));
-    const allResults = [...customResults, ...(d.results || [])];
+    const customResults = customs.filter(a=>a.title?.toLowerCase().includes(ql));
+    const allResults = [...customResults, ...(d.results||[])];
     if (!allResults.length) {
-      ov.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px">Anime tidak ditemukan.</p>';
+      ov.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:12px">Anime "<strong>${q}</strong>" tidak ditemukan.</p>`;
       return;
     }
-    ov.innerHTML = allResults.slice(0, 8).map(a => `
-      <a href="anime.html?slug=${encodeURIComponent(a.slug || '')}" class="sr-item">
-        <img src="${a.thumb}" class="sr-thumb"
+    ov.innerHTML = allResults.slice(0,8).map(a => `
+      <a href="anime.html?slug=${encodeURIComponent(a.slug||'')}" class="sr-item"
+        onclick="isSearchFocused=false;closeSearch()">
+        <img src="${proxyImg(a.thumb)}" class="sr-thumb"
           onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
         <div>
           <div class="sr-title">${a.title}</div>
-          <div class="sr-meta">${a.status || ''}</div>
+          <div class="sr-meta">${a.status||'Anime'}</div>
         </div>
       </a>`).join('');
   } catch(e) {
@@ -206,6 +204,5 @@ async function doSearch(q) {
 }
 
 function closeSearch() {
-  searchOpen = false;
   document.getElementById('searchOv')?.classList.remove('show');
 }
