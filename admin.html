@@ -204,6 +204,27 @@
         <div id="connStatus" class="conn-status"></div>
       </div>
 
+      <div class="setup-box" style="border-color:#2563eb">
+        <div class="setup-title" style="color:#60a5fa">📨 Config Telegram Notif</div>
+        <div class="setup-sub">
+          Setiap ada user login, notif otomatis terkirim ke Telegram kamu.<br>
+          Token disimpan lokal — <strong>tidak masuk ke GitHub</strong>.
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label>Bot Token</label>
+            <input id="cfg-tg-token" type="password" placeholder="123456789:AAFxxx...">
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">Dari @BotFather → /mybots → pilih bot → buat token baru</div>
+          </div>
+          <div>
+            <label>Chat ID</label>
+            <input id="cfg-tg-chat" type="text" placeholder="987654321">
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">Dari @userinfobot — kirim pesan sembarang ke sana</div>
+          </div>
+          <button class="btn btn-primary btn-sm" style="justify-content:center" onclick="saveTelegram()">💾 Simpan Config Telegram</button>
+        </div>
+      </div>
+
       <div class="setup-box">
         <div class="setup-title">🔑 Ganti Password Admin</div>
         <div class="setup-sub">Password default: <code>kitsune2024</code></div>
@@ -473,6 +494,15 @@ function saveAndTest() {
   testConnection();
 }
 
+function saveTelegram() {
+  const token = document.getElementById('cfg-tg-token').value.trim();
+  const chat  = document.getElementById('cfg-tg-chat').value.trim();
+  if (!token || !chat) { showAlert('❌ Isi Bot Token dan Chat ID!', 'error'); return; }
+  localStorage.setItem('kitsune_tg_token', token);
+  localStorage.setItem('kitsune_tg_chat', chat);
+  showAlert('✅ Config Telegram tersimpan! Coba login di profile.html untuk test.', 'success');
+}
+
 function savePassword() {
   const pw = document.getElementById('cfg-password').value.trim();
   if (!pw || pw.length < 4) { showAlert('❌ Password minimal 4 karakter!', 'error'); return; }
@@ -512,6 +542,10 @@ if (sessionStorage.getItem('kitsune_auth') === '1') {
   const savedKey = localStorage.getItem('jb_api_key');
   if (savedBin) document.getElementById('cfg-binid').value = savedBin;
   if (savedKey) document.getElementById('cfg-apikey').value = savedKey;
+  const savedTgToken = localStorage.getItem('kitsune_tg_token');
+  const savedTgChat  = localStorage.getItem('kitsune_tg_chat');
+  if (savedTgToken) document.getElementById('cfg-tg-token').value = savedTgToken;
+  if (savedTgChat)  document.getElementById('cfg-tg-chat').value  = savedTgChat;
   if (!savedBin || !savedKey || !localStorage.getItem('kitsune_conn_ok')) {
     document.getElementById('connWarning').style.display = 'block';
   }
