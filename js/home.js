@@ -191,7 +191,7 @@ async function doSearch(q) {
     ov.innerHTML = allResults.slice(0,8).map(a => `
       <a href="anime.html?slug=${encodeURIComponent(a.slug||'')}" class="sr-item"
         onclick="isSearchFocused=false;closeSearch()">
-        <img src="${proxyImg(a.thumb)}" class="sr-thumb"
+        <img src="${a.thumb}" class="sr-thumb"
           onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
         <div>
           <div class="sr-title">${a.title}</div>
