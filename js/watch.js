@@ -31,29 +31,48 @@ async function getCustomAnime(slug) {
   } catch(e) { return null; }
 }
 
+// ── Fetch with timeout helper ───────────────
+async function fetchWithTimeout(url, ms = 20000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    return r;
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
 // ── Load anime info ──────────────────────────
 async function loadAnime(slug) {
+  const titleEl   = document.getElementById('watchTitle');
+  const synEl     = document.getElementById('watchSynopsis');
+  const epSection = document.getElementById('epPills');
+
   try {
     if (isCustomAnime(slug)) {
       animeData = await getCustomAnime(slug);
     } else {
-      const r = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`);
+      const r = await fetchWithTimeout(`${API}/anime?slug=${encodeURIComponent(slug)}`, 20000);
       animeData = await r.json();
     }
 
-    if (!animeData) return;
+    if (!animeData || !animeData.title) {
+      if (titleEl) titleEl.textContent = 'Anime tidak ditemukan';
+      if (synEl) synEl.textContent = '';
+      return;
+    }
 
     episodeList = animeData.episodes || [];
 
     const thumbEl = document.getElementById('watchThumb');
-    const titleEl = document.getElementById('watchTitle');
     if (thumbEl) {
       thumbEl.src = animeData.thumb || '';
       thumbEl.onerror = () => thumbEl.src = 'https://placehold.co/44x60/12121f/7c5cfc?text=?';
     }
     if (titleEl) titleEl.textContent = animeData.title || '';
-
-    const synEl = document.getElementById('watchSynopsis');
     if (synEl) synEl.textContent = animeData.synopsis || 'Tidak ada sinopsis.';
 
     const detailLink = document.getElementById('detailLink');
@@ -62,6 +81,9 @@ async function loadAnime(slug) {
     renderEpPills();
   } catch(e) {
     console.error('Load anime error:', e);
+    if (titleEl) titleEl.textContent = 'Gagal memuat';
+    if (synEl) synEl.textContent = 'Server lambat atau tidak tersedia. Coba refresh halaman.';
+    if (epSection) epSection.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px">Gagal memuat episode. <a href="javascript:location.reload()" style="color:var(--accent)">Refresh</a></div>';
   }
 }
 
@@ -132,7 +154,7 @@ async function loadEpisode(animeSlug, epNum) {
   }
 
   try {
-    const r = await fetch(`${API}/episode?slug=${encodeURIComponent(epSlug)}`);
+    const r = await fetchWithTimeout(`${API}/episode?slug=${encodeURIComponent(epSlug)}`, 20000);
     const data = await r.json();
 
     saveWatchHistory(animeSlug, epNum);
@@ -193,7 +215,7 @@ async function loadServerById(serverId, btnIdx) {
   const playerDiv = document.getElementById('playerArea');
   if (playerDiv) playerDiv.innerHTML = `<div class="video-placeholder"><p>Memuat server...</p></div>`;
   try {
-    const r = await fetch(`${API}/server?id=${encodeURIComponent(serverId)}`);
+    const r = await fetchWithTimeout(`${API}/server?id=${encodeURIComponent(serverId)}`, 15000);
     const d = await r.json();
     if (d.url) loadPlayer(d.url);
     else if (playerDiv) playerDiv.innerHTML = `<div class="video-placeholder"><p>Server tidak merespons. Coba server lain.</p></div>`;
