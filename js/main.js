@@ -38,13 +38,9 @@ function updateNavAuth() {
   }
 }
 
-// ── Image proxy fallback (Fix No.2 gambar ?) ──
-// Gunakan wsrv.nl sebagai proxy untuk hotlink-blocked images
+// ── Image helper — pakai langsung, biarkan browser handle error ──
 function proxyImg(url) {
-  if (!url || url.startsWith('https://placehold')) return url;
-  // Kalau sudah pakai proxy, return langsung
-  if (url.includes('wsrv.nl') || url.includes('placehold.co')) return url;
-  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=200&h=280&fit=cover&output=webp`;
+  return url || '';
 }
 
 function makeCard(anime, isNew=false) {
