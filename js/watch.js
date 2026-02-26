@@ -110,7 +110,7 @@ function renderEpPills() {
   }, 300);
 }
 
-// ── Load episode ─────────────────────────────
+// ── Load episode — format baru Jikan+Samehadaku ─
 async function loadEpisode(animeSlug, epNum) {
   const epMeta = document.getElementById('epMeta');
   if (epMeta) epMeta.textContent = `Episode ${epNum}`;
@@ -154,12 +154,13 @@ async function loadEpisode(animeSlug, epNum) {
   }
 
   try {
-    const r = await fetchWithTimeout(`${API}/episode?slug=${encodeURIComponent(epSlug)}`, 20000);
+    const r = await fetchWithTimeout(`${API}/episode?slug=${encodeURIComponent(epSlug)}`, 25000);
     const data = await r.json();
 
     saveWatchHistory(animeSlug, epNum);
     renderEpPills();
 
+    // Format baru: { servers: [{name, url}] }
     const servers = data.servers || [];
     renderServers(servers, epSlug);
     updateNavBtns(epNum);
@@ -168,8 +169,6 @@ async function loadEpisode(animeSlug, epNum) {
       const first = servers[0];
       if (first.url) {
         loadPlayer(first.url);
-      } else if (first.serverId && first.needsPost) {
-        await loadServerById(first.serverId, 0);
       } else {
         if (playerDiv) playerDiv.innerHTML = `<div class="video-placeholder"><p>Server tidak tersedia</p></div>`;
       }
