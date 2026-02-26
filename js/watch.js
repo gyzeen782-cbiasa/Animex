@@ -1,7 +1,8 @@
 // ===== watch.js — KitsuneID =====
 const API = 'https://kitsuneid-api-production.up.railway.app';
-const JSONBIN_ID = '699c6ab843b1c97be996c684';
-const JSONBIN_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+// getJbBin() = '699c6ab843b1c97be996c684';
+function getJbKey() { return localStorage.getItem('jb_api_key') || ''; }
+function getJbBin() { return localStorage.getItem('jb_bin_id') || '699c6ab843b1c97be996c684'; }
 
 let animeData = null, episodeList = [], currentSlug = '', currentEp = '1';
 
@@ -22,8 +23,8 @@ function isCustomAnime(slug) {
 
 async function getCustomAnime(slug) {
   try {
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${getJbBin()}/latest`, {
+      headers: { 'X-Master-Key': getJbKey() }
     });
     const d = await r.json();
     const record = d.record ?? d; return (record.animes || []).find(a => a.slug === slug) || null;
