@@ -114,23 +114,38 @@ function switchRTab(name) {
 // ── Random Tab ────────────────────────────────
 async function loadPool() {
   try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 15000);
     const [r1, r2] = await Promise.all([
-      fetch(`${API}/ongoing`),
-      fetch(`${API}/complete`)
+      fetch(`${API}/ongoing`,  { signal: ctrl.signal }),
+      fetch(`${API}/complete`, { signal: ctrl.signal })
     ]);
     const [d1, d2] = await Promise.all([r1.json(), r2.json()]);
     pool = [...(d1.animes || []), ...(d2.animes || [])];
-  } catch(e) {}
+    console.log('Pool loaded:', pool.length, 'anime');
+  } catch(e) {
+    console.error('Pool error:', e.message);
+  }
 }
 
 async function pickRandom() {
-  if (!pool.length) await loadPool();
-  if (!pool.length) { showToast('Gagal memuat data', 'error'); return; }
+  if (!pool.length) {
+    const btn = document.querySelector('.btn-random');
+    if (btn) btn.textContent = '⏳ Memuat...';
+    await loadPool();
+    if (btn) btn.textContent = '🎲 Pilihkan Anime!';
+  }
+  if (!pool.length) {
+    alert('Gagal memuat data. Coba refresh halaman!');
+    return;
+  }
   const a = pool[Math.floor(Math.random() * pool.length)];
   const card = document.getElementById('rcard');
-  document.getElementById('rThumb').src = a.thumb || '';
-  document.getElementById('rTitle').textContent = a.title || '';
-  document.getElementById('rMeta').textContent = `${a.status || ''} ${a.rating ? '· ★ ' + a.rating : ''}`;
+  const thumb = document.getElementById('rThumb');
+  thumb.src = a.thumb || '';
+  thumb.onerror = () => { thumb.src = 'https://placehold.co/160x213/13131f/7c5cfc?text=?'; };
+  document.getElementById('rTitle').textContent = a.title || 'Anime';
+  document.getElementById('rMeta').textContent = `${a.status || ''} ${a.rating ? '· ★ ' + a.rating : ''}`.trim();
   const sl = encodeURIComponent(a.slug || '');
   document.getElementById('rWatch').href = `watch.html?slug=${sl}&ep=1`;
   document.getElementById('rDetail').href = `anime.html?slug=${sl}`;
