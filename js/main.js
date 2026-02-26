@@ -75,6 +75,19 @@ function makeOC(anime) {
   </a>`;
 }
 
+const RAILWAY_API = 'https://kitsuneid-api-production.up.railway.app';
+
+// ── Keep-alive ping dari frontend ────────────
+// Ping Railway setiap 3 menit supaya tidak tidur
+function startKeepAlive() {
+  const ping = () => {
+    fetch(`${RAILWAY_API}/ping`, { cache: 'no-store' })
+      .then(() => {}) .catch(() => {});
+  };
+  ping(); // langsung ping saat halaman dibuka
+  setInterval(ping, 3 * 60 * 1000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Inject logo
   document.querySelectorAll('.logo').forEach(el => {
@@ -82,4 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   // Update navbar auth status
   updateNavAuth();
+  // Keep Railway aktif
+  startKeepAlive();
 });
