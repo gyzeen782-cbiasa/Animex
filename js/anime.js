@@ -214,5 +214,3 @@ function toggleSave(anime) {
   }
   saveLocal('savedAnimes', saved);
 }
-', saved);
-}
