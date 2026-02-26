@@ -1,7 +1,8 @@
 // ===== anime.js — KitsuneID =====
 const API = 'https://kitsuneid-api-production.up.railway.app';
-const JSONBIN_ID = '699c6ab843b1c97be996c684';
-const JSONBIN_KEY = '$2a$10$.CS42KGtrfBux7Lo2QU6YOsRDcm8iFdNXnVwzdTig2BDtGRSJJ7Wq';
+// getJbBin() = '699c6ab843b1c97be996c684';
+function getJbKey() { return localStorage.getItem('jb_api_key') || ''; }
+function getJbBin() { return localStorage.getItem('jb_bin_id') || '699c6ab843b1c97be996c684'; }
 
 const slug = getParam('slug');
 let isSynopsisExpanded = false;
@@ -21,11 +22,11 @@ function isCustomAnime(slug) {
 // ── Ambil data custom dari JSONBin ───────────
 async function getCustomAnime(slug) {
   try {
-    const r = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_KEY }
+    const r = await fetch(`https://api.jsonbin.io/v3/b/${getJbBin()}/latest`, {
+      headers: { 'X-Master-Key': getJbKey() }
     });
     const d = await r.json();
-    const animes = d.record?.animes || [];
+    const record = d.record ?? d; const animes = record.animes || [];
     return animes.find(a => a.slug === slug) || null;
   } catch(e) { return null; }
 }
@@ -43,12 +44,22 @@ async function loadAnimeDetail(slug) {
         return;
       }
     } else {
-      // Anime biasa → ambil dari Railway
-      const res = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`);
-      data = await res.json();
+      // Anime biasa → ambil dari Railway (timeout 15s)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const res = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`, { signal: controller.signal });
+        clearTimeout(timeout);
+        data = await res.json();
+      } catch(fetchErr) {
+        clearTimeout(timeout);
+        document.getElementById('detailContent').innerHTML =
+          '<div style="padding:30px;text-align:center;color:var(--text2)"><div style="font-size:36px;margin-bottom:12px">⏱️</div><div style="font-weight:700;margin-bottom:6px">Koneksi lambat</div><div style="font-size:13px;margin-bottom:16px">Server butuh waktu lebih lama. Coba lagi?</div><button onclick="location.reload()" style="padding:10px 20px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-weight:700;cursor:pointer">🔄 Coba Lagi</button></div>';
+        return;
+      }
       if (!data || !data.title) {
         document.getElementById('detailContent').innerHTML =
-          '<p style="color:var(--text-muted);padding:20px">Anime tidak ditemukan.</p>';
+          '<p style="color:var(--text2);padding:20px;text-align:center">Anime tidak ditemukan.</p>';
         return;
       }
     }
@@ -202,4 +213,6 @@ function toggleSave(anime) {
     showToast('Dihapus dari simpan.', 'info');
   }
   saveLocal('savedAnimes', saved);
+}
+', saved);
 }
