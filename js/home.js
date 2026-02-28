@@ -91,7 +91,7 @@ function renderHero(idx) {
       ${a.type?`<span style="background:var(--accent-s);padding:2px 8px;border-radius:20px;font-size:10px;color:var(--accent)">${a.type}</span>`:''}`;
     const sl = encodeURIComponent(a.slug||'');
     document.getElementById('heroWatch').href = `watch.html?slug=${sl}&ep=1`;
-    document.getElementById('heroDetail').href = `anime.html?slug=${sl}`;
+    document.getElementById('heroDetail').href = `watch.html?slug=${sl}&ep=1`;
     body.style.cssText = 'opacity:1;transform:translateY(0);transition:opacity .4s,transform .4s';
     document.querySelectorAll('.hero-dot').forEach((d,i)=>d.classList.toggle('active',i===idx));
   }, 180);
@@ -189,7 +189,7 @@ async function doSearch(q) {
       return;
     }
     ov.innerHTML = allResults.slice(0,8).map(a => `
-      <a href="anime.html?slug=${encodeURIComponent(a.slug||'')}" class="sr-item"
+      <a href="watch.html?slug=${encodeURIComponent(a.slug||'')}&ep=1" class="sr-item"
         onclick="isSearchFocused=false;closeSearch()">
         <img src="${a.thumb}" class="sr-thumb"
           onerror="this.src='https://placehold.co/38x52/12121f/7c5cfc?text=?'">
