@@ -76,7 +76,7 @@ async function loadAnime(slug) {
     if (synEl)   synEl.textContent   = animeData.synopsis || '';
 
     const detailLink = document.getElementById('detailLink');
-    if (detailLink) detailLink.href = `anime.html?slug=${encodeURIComponent(slug)}`;
+    if (detailLink) detailLink.style.display = 'none'; // anime.html removed
 
     renderEpPills();
   } catch(e) {
