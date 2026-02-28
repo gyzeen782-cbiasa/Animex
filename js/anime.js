@@ -43,10 +43,13 @@ async function loadAnimeDetail(slug) {
           '<p style="color:var(--text-muted);padding:20px">Anime tidak ditemukan.</p>';
         return;
       }
+      renderDetail(data);
+      renderEpisodes(data.episodes || []);
+      return;
     } else {
-      // Anime biasa → ambil dari Railway (timeout 15s)
+      // TAHAP 1: Ambil info Jikan dulu — cepat!
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15000);
+      const timeout = setTimeout(() => controller.abort(), 12000);
       try {
         const res = await fetch(`${API}/anime?slug=${encodeURIComponent(slug)}`, { signal: controller.signal });
         clearTimeout(timeout);
@@ -90,13 +93,77 @@ async function loadAnimeDetail(slug) {
         return;
       }
     }
+    // RENDER LANGSUNG dengan data Jikan (cover, judul, rating, sinopsis)
     renderDetail(data);
-    renderEpisodes(data.episodes || []);
+
+    // Episode list: kalau sudah ada dari cache server, pakai. Kalau tidak, load terpisah.
+    if (data.episodes && data.episodes.length > 0) {
+      renderEpisodes(data.episodes);
+    } else {
+      // Tampilkan skeleton episode dulu
+      showEpisodeSkeleton();
+      // Load episode di background — tidak block render!
+      loadEpisodesBackground(slug);
+    }
+
   } catch(err) {
     console.error('Error:', err);
     document.getElementById('detailContent').innerHTML =
       '<p style="color:var(--text-muted);padding:20px">Gagal memuat detail anime.</p>';
   }
+}
+
+// ── Load episode list secara terpisah (background) ───
+async function loadEpisodesBackground(slug) {
+  // Retry beberapa kali karena Sanka mungkin butuh waktu resolve
+  const maxRetry = 3;
+  const retryDelay = [2000, 4000, 6000]; // tunggu 2s, 4s, 6s antar retry
+
+  for (let i = 0; i < maxRetry; i++) {
+    try {
+      if (i > 0) await new Promise(r => setTimeout(r, retryDelay[i - 1]));
+
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 10000);
+      const res = await fetch(`${API}/anime/episodes?slug=${encodeURIComponent(slug)}`, { signal: ctrl.signal });
+      clearTimeout(timer);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const d = await res.json();
+
+      if (d.episodes && d.episodes.length > 0) {
+        renderEpisodes(d.episodes);
+        return; // sukses, keluar dari loop
+      }
+    } catch(e) {
+      console.log(`[episodes] Retry ${i + 1} failed:`, e.message);
+    }
+  }
+
+  // Semua retry gagal
+  hideEpisodeSkeleton();
+  console.log('[episodes] Could not load episode list');
+}
+
+function showEpisodeSkeleton() {
+  const section = document.getElementById('episodeSection');
+  if (!section) return;
+  section.style.display = 'block';
+  const list = document.getElementById('episodeList');
+  if (list) list.innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:4px 0">
+      ${Array(6).fill(0).map(() => `
+        <div style="width:52px;height:52px;border-radius:10px;
+          background:linear-gradient(90deg,var(--card) 25%,var(--border) 50%,var(--card) 75%);
+          background-size:200% 100%;animation:shimmer 1.2s infinite">
+        </div>`).join('')}
+    </div>
+    <style>@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>`;
+}
+
+function hideEpisodeSkeleton() {
+  const section = document.getElementById('episodeSection');
+  if (section) section.style.display = 'none';
 }
 
 function renderDetail(anime) {
