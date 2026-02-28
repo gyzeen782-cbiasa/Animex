@@ -1,13 +1,7 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/ongoing", "destination": "/api/scrape" },
-    { "source": "/api/complete", "destination": "/api/scrape" },
-    { "source": "/api/schedule", "destination": "/api/scrape" },
-    { "source": "/api/anime", "destination": "/api/scrape" },
-    { "source": "/api/episode", "destination": "/api/scrape" },
-    { "source": "/api/server", "destination": "/api/scrape" },
-    { "source": "/api/search", "destination": "/api/scrape" }
+    { "source": "/api/:path*", "destination": "https://kitsuneid-api-production.up.railway.app/:path*" }
   ],
   "headers": [
     {
