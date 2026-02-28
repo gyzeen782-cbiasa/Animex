@@ -58,8 +58,35 @@ async function loadAnimeDetail(slug) {
         return;
       }
       if (!data || !data.title) {
-        document.getElementById('detailContent').innerHTML =
-          '<p style="color:var(--text2);padding:20px;text-align:center">Anime tidak ditemukan.</p>';
+        const judulBersih = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        document.getElementById('detailContent').innerHTML = `
+          <div style="padding:40px 24px;text-align:center;max-width:400px;margin:0 auto">
+            <div style="font-size:56px;margin-bottom:16px">😔</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">
+              Belum Tersedia
+            </div>
+            <div style="font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6">
+              <strong style="color:var(--text)">${judulBersih}</strong> belum ada di database kami saat ini.
+              Coba cari judul lain atau gunakan fitur pencarian.
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <a href="index.html?search=${encodeURIComponent(judulBersih)}"
+                style="padding:12px 20px;background:var(--accent);border-radius:12px;
+                       color:#fff;font-weight:700;text-decoration:none;font-size:14px">
+                🔍 Cari "\${judulBersih}"
+              </a>
+              <a href="index.html"
+                style="padding:12px 20px;background:var(--card);border:1px solid var(--border);
+                       border-radius:12px;color:var(--text2);font-weight:600;
+                       text-decoration:none;font-size:14px">
+                ← Kembali ke Home
+              </a>
+            </div>
+          </div>\`;
+        const epSec = document.getElementById('episodeSection');
+        const synSec = document.getElementById('synopsisSection');
+        if (epSec) epSec.style.display = 'none';
+        if (synSec) synSec.style.display = 'none';
         return;
       }
     }
