@@ -46,7 +46,7 @@ function proxyImg(url) {
 function makeCard(anime, isNew=false) {
   const sl = encodeURIComponent(anime.slug||'');
   const img = proxyImg(anime.thumb||'');
-  return `<a href="anime.html?slug=${sl}" class="card">
+  return `<a href="watch.html?slug=${sl}&ep=1" class="card">
     <div class="card-thumb">
       <img src="${img}" alt="${anime.title}" loading="lazy"
         onerror="this.src='https://placehold.co/200x280/12121f/7c5cfc?text=?'">
@@ -64,7 +64,7 @@ function makeCard(anime, isNew=false) {
 function makeOC(anime) {
   const sl = encodeURIComponent(anime.slug||'');
   const img = proxyImg(anime.thumb||'');
-  return `<a href="anime.html?slug=${sl}" class="oc">
+  return `<a href="watch.html?slug=${sl}&ep=1" class="oc">
     <div class="oc-thumb"><img src="${img}" alt="${anime.title}" loading="lazy"
       onerror="this.src='https://placehold.co/56x76/12121f/7c5cfc?text=?'"></div>
     <div class="oc-info">
