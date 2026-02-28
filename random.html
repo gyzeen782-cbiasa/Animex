@@ -148,7 +148,7 @@ async function pickRandom() {
   document.getElementById('rMeta').textContent = `${a.status || ''} ${a.rating ? '· ★ ' + a.rating : ''}`.trim();
   const sl = encodeURIComponent(a.slug || '');
   document.getElementById('rWatch').href = `watch.html?slug=${sl}&ep=1`;
-  document.getElementById('rDetail').href = `anime.html?slug=${sl}`;
+  document.getElementById('rDetail').href = `watch.html?slug=${sl}&ep=1`;
   document.getElementById('rPlaceholder').style.display = 'none';
   card.style.display = 'block';
   card.classList.remove('spin'); void card.offsetWidth; card.classList.add('spin');
@@ -192,7 +192,7 @@ async function loadSpecial() {
           const sl = encodeURIComponent(a.slug || '');
           const thumb = a.thumb || '';
           return `
-            <a href="anime.html?slug=${sl}" class="sp-card">
+            <a href="watch.html?slug=${sl}&ep=1" class="sp-card">
               <img src="${thumb}"
                 onerror="this.src='https://placehold.co/160x213/13131f/7c5cfc?text=?'"
                 loading="lazy">
