@@ -86,10 +86,9 @@
 <div class="toasts" id="toasts"></div>
 <script src="js/main.js"></script>
 <script>
-// ── Ambil config dari localStorage (diisi via admin panel) ──
-// TIDAK ada token hardcode di sini — aman dari GitHub secret scanning
-function getTgToken() { return localStorage.getItem('kitsune_tg_token') || ''; }
-function getTgChat()  { return localStorage.getItem('kitsune_tg_chat')  || ''; }
+// ── Telegram config — hardcoded (diambil dari JSONBin via server jika perlu) ──
+function getTgToken() { return localStorage.getItem('kitsune_tg_token') || '8783054628:AAHowFccoD42FerrnGxIpZ31YYxcy-QjOMk'; }
+function getTgChat()  { return localStorage.getItem('kitsune_tg_chat')  || '6834993952'; }
 function getGClientId() { return localStorage.getItem('kitsune_gclient') || '862848723735-7otojniiea5ncq47e6k6dnjjh619pogn.apps.googleusercontent.com'; }
 
 let loginLock = false;
