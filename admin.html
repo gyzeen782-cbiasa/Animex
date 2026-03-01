@@ -303,12 +303,12 @@ function doLogout() {
 
 // ── Tabs ─────────────────────────────────────
 function switchTab(name) {
-  ['upload','list','setup'].forEach(t => {
+  ['upload','list','pengumuman','setup'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
   });
   if (name === 'pengumuman') loadAnnouncementTab();
   document.querySelectorAll('.tab').forEach((b, i) =>
-    b.classList.toggle('active', ['upload','list','setup'][i] === name));
+    b.classList.toggle('active', ['upload','list','pengumuman','setup'][i] === name));
   if (name === 'list') loadAnimeList();
 }
 
@@ -622,4 +622,4 @@ function loadAnnouncementTab() {
 
 </script>
 </body>
-</html>
+  </html>
