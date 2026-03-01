@@ -78,6 +78,9 @@ async function loadAnime(slug) {
     const detailLink = document.getElementById('detailLink');
     if (detailLink) detailLink.style.display = 'none'; // anime.html removed
 
+    // Update save button state
+    updateSaveBtn(slug);
+
     renderEpPills();
   } catch(e) {
     console.error('loadAnime error:', e);
@@ -369,4 +372,50 @@ function saveWatchHistory(slug, epNum) {
     lastEp: epNum, timestamp: Date.now()
   });
   saveLocal('recentWatch', recent.slice(0, 30));
+}
+
+// ── Save Anime dari Watch Page ────────────────
+function updateSaveBtn(slug) {
+  const saved = getLocal('savedAnimes') || [];
+  const isSaved = saved.some(a => a.slug === slug);
+  const btn  = document.getElementById('saveWatchBtn');
+  const icon = document.getElementById('saveWatchIcon');
+  const text = document.getElementById('saveWatchText');
+  if (!btn) return;
+  if (isSaved) {
+    btn.style.color = 'var(--accent)';
+    if (icon) icon.setAttribute('fill', 'var(--accent)');
+    if (text) text.textContent = 'Tersimpan';
+  } else {
+    btn.style.color = '';
+    if (icon) icon.setAttribute('fill', 'none');
+    if (text) text.textContent = 'Simpan';
+  }
+}
+
+function toggleSaveAnime() {
+  const slug = currentSlug;
+  if (!slug || !animeData) { showToast?.('Anime belum dimuat', 'info'); return; }
+
+  let saved = getLocal('savedAnimes') || [];
+  const idx  = saved.findIndex(a => a.slug === slug);
+
+  if (idx === -1) {
+    saved.push({
+      slug,
+      title:   animeData.title || slug,
+      thumb:   animeData.thumb || '',
+      episode: animeData.episode || '?',
+      status:  animeData.status || '',
+      rating:  animeData.rating || null,
+      savedAt: Date.now(),
+    });
+    showToast?.('✅ Anime disimpan!', 'success');
+  } else {
+    saved.splice(idx, 1);
+    showToast?.('Dihapus dari simpan', 'info');
+  }
+
+  saveLocal('savedAnimes', saved);
+  updateSaveBtn(slug);
 }
