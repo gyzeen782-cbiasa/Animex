@@ -5,7 +5,37 @@ function getJbBin() { return localStorage.getItem('jb_bin_id') || '699c6ab843b1c
 
 let heroList = [], heroIdx = 0, heroTimer = null;
 
+// ── Banner Pengumuman dari Admin ──────────────
+function loadAnnouncement() {
+  const raw = localStorage.getItem('kitsune_announcement');
+  if (!raw) return;
+  try {
+    const ann = JSON.parse(raw);
+    if (!ann.msg) return;
+    const colors = { info:'#3b82f6', warning:'#f59e0b', success:'#10b981', danger:'#ef4444' };
+    const banner = document.createElement('div');
+    banner.id = 'annBanner';
+    banner.style.cssText = `
+      margin:12px 16px 0;padding:12px 16px;border-radius:12px;
+      border-left:4px solid ${colors[ann.type]||'#3b82f6'};
+      background:var(--card);font-size:13px;color:var(--text);
+      display:flex;align-items:flex-start;gap:10px;
+      animation:fadeIn .3s ease;position:relative;
+    `;
+    banner.innerHTML = `
+      <div style="flex:1;line-height:1.5">${ann.msg}</div>
+      <button onclick="document.getElementById('annBanner').remove()"
+        style="background:none;border:none;color:var(--text2);font-size:16px;cursor:pointer;padding:0;flex-shrink:0">✕</button>
+    `;
+    // Sisipkan di paling atas page
+    const page = document.querySelector('.page') || document.body;
+    page.insertBefore(banner, page.firstChild);
+  } catch(e) {}
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
+  loadAnnouncement();
   loadOngoing();
   loadComplete();
   loadScheduleHome();
